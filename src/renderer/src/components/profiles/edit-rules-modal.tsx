@@ -1198,6 +1198,7 @@ const EditRulesModal: React.FC<Props> = (props) => {
                 prependRuleItems.push(parseRuleString(ruleStr))
               })
 
+              let prependInsertCount = 0
               const { updatedRules, ruleIndices } = processRulesWithPositions(
                 prependRuleItems,
                 allRules,
@@ -1205,7 +1206,7 @@ const EditRulesModal: React.FC<Props> = (props) => {
                   if (rule.offset !== undefined && rule.offset < currentRules.length) {
                     return rule.offset
                   }
-                  return 0
+                  return prependInsertCount++
                 }
               )
 
@@ -1359,6 +1360,7 @@ const EditRulesModal: React.FC<Props> = (props) => {
     try {
       // 保存规则到文件
       const prependRuleStrings = Array.from(prependRules)
+        .sort((a, b) => a - b)
         .filter((index) => !deletedRules.has(index) && index < rules.length)
         .map((index) => convertRuleToString(rules[index]))
 
