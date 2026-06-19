@@ -1,10 +1,10 @@
-# Koala Clash
+# VRP VPN
 <p align="center">
   <img src="./build/icon.png" alt="Clash" width="128" />
   <br>
   <br>
-  <a href="https://github.com/coolcoala/koala-clash/releases">
-    <img src="https://img.shields.io/github/release/coolcoala/koala-clash/all.svg">
+  <a href="https://github.com/coolcoala/vrp-vpn/releases">
+    <img src="https://img.shields.io/github/release/coolcoala/vrp-vpn/all.svg">
   </a>
 </p>
 <h3 align="center">GUI client for <a href="https://github.com/MetaCubeX/mihomo">Mihomo</a></h3>
@@ -29,7 +29,7 @@
 
 ### Tech Stack
 
-Koala Clash is built with Electron + React + TypeScript.
+VRP VPN is built with Electron + React + TypeScript.
 
 **Frontend:** React 19, shadcn/UI, Tailwind CSS, Monaco Editor
 
@@ -38,8 +38,8 @@ Koala Clash is built with Electron + React + TypeScript.
 ### Quick Start
 
 ```bash
-git clone https://github.com/coolcoala/koala-clash.git
-cd koala-clash
+git clone https://github.com/coolcoala/vrp-vpn.git
+cd vrp-vpn
 pnpm install
 pnpm dev
 ```

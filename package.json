@@ -1,10 +1,10 @@
 {
-  "name": "koala-clash",
+  "name": "vrp-vpn",
   "version": "1.3.1",
-  "description": "Koala Clash",
+  "description": "VRP VPN",
   "main": "./out/main/index.js",
   "author": "xishang0128, co-author: coolcoala",
-  "homepage": "https://github.com/coolcoala/koala-clash",
+  "homepage": "https://github.com/coolcoala/vrp-vpn",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",

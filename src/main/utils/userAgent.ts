@@ -7,5 +7,5 @@ export async function getUserAgent(): Promise<string> {
     return userAgent
   }
 
-  return `koala-clash/${version}`
+  return `vrp-vpn/${version}`
 }

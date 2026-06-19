@@ -401,7 +401,7 @@ export default {
     pleaseConfirm: 'Please Confirm',
     confirmDelete: 'Confirm Delete',
     confirmImportProfile: 'Confirm import subscription config?',
-    confirmQuit: 'Are you sure you want to quit Koala Clash?',
+    confirmQuit: 'Are you sure you want to quit VRP VPN?',
     quitWarning: 'Proxy functionality will stop working after quitting',
     quickQuitHint: 'Double press or long press',
     canQuitDirectly: 'to quit directly',
@@ -638,7 +638,7 @@ export default {
       registerTaskSchedule: 'Register Task Schedule'
     },
     serviceModal: {
-      title: 'Koala Clash Service Management',
+      title: 'VRP VPN Service Management',
       serviceStatus: 'Service Status',
       connectionStatus: 'Connection Status',
       checking: 'Checking',
@@ -947,7 +947,7 @@ export default {
     sidebarHomeDesc: 'Click the Home icon in the sidebar to return and finish the tutorial.',
     supportTitle: 'Support',
     supportDesc: 'Click here to contact your provider support.',
-    welcome: 'Welcome to Koala Clash',
+    welcome: 'Welcome to VRP VPN',
     welcomeDesc:
       'This is an interactive tutorial to help you quickly get familiar with this app. Click "Next" to continue.',
     navbar: 'Navigation Bar',
