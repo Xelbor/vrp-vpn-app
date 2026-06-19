@@ -3,8 +3,8 @@
   <img src="./build/icon.png" alt="Clash" width="128" />
   <br>
   <br>
-  <a href="https://github.com/coolcoala/vrp-vpn/releases">
-    <img src="https://img.shields.io/github/release/coolcoala/vrp-vpn/all.svg">
+  <a href="https://github.com/Xelbor/vrp-vpn-app/releases">
+    <img src="https://img.shields.io/github/release/Xelbor/vrp-vpn-app/all.svg">
   </a>
 </p>
 <h3 align="center">GUI client for <a href="https://github.com/MetaCubeX/mihomo">Mihomo</a></h3>
@@ -38,7 +38,7 @@ VRP VPN is built with Electron + React + TypeScript.
 ### Quick Start
 
 ```bash
-git clone https://github.com/coolcoala/vrp-vpn.git
+git clone https://github.com/Xelbor/vrp-vpn-app.git
 cd vrp-vpn
 pnpm install
 pnpm dev

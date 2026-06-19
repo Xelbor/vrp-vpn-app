@@ -7,7 +7,7 @@ const rawChangelog = readFileSync('changelog.md', 'utf-8')
 const { version } = JSON.parse(pkg)
 
 let changelog = extractVersionSection(rawChangelog, version)
-const downloadUrl = `https://github.com/coolcoala/vrp-vpn/releases/download/${version}`
+const downloadUrl = `https://github.com/Xelbor/vrp-vpn-app/releases/download/${version}`
 const latest = {
   version,
   changelog

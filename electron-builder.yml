@@ -65,7 +65,7 @@ linux:
     - deb
     - rpm
     - pacman
-  maintainer: coolcoala
+  maintainer: Xelbor
   category: Utility
   artifactName: ${productName}_${arch}.${ext}
 deb:

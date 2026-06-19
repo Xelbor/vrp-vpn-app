@@ -5,7 +5,7 @@ body:
       label: Confirmation Steps
       options:
         - label: I have briefly described the features I require in the title.
-        - label: I have searched the [Issues](https://github.com/coolcoala/vrp-vpn/issues?q=is%3Aissue) but haven't found the functionality I need.
+        - label: I have searched the [Issues](https://github.com/Xelbor/vrp-vpn-app/issues?q=is%3Aissue) but haven't found the functionality I need.
         - label: This is a feature request for GUI programs, not kernel programs.
         - label: I haven't found the feature I need in the latest version.
     id: ensure

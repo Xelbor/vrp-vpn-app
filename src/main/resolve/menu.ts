@@ -172,13 +172,13 @@ export async function createApplicationMenu(): Promise<void> {
         {
           label: t('menu.learnMore'),
           click: () => {
-            shell.openExternal('https://github.com/coolcoala/vrp-vpn')
+            shell.openExternal('https://github.com/Xelbor/vrp-vpn-app')
           }
         },
         {
           label: t('menu.reportIssue'),
           click: () => {
-            shell.openExternal('https://github.com/coolcoala/vrp-vpn/issues')
+            shell.openExternal('https://github.com/Xelbor/vrp-vpn-app/issues')
           }
         },
         { type: 'separator' },

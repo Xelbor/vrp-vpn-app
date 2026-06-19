@@ -26,7 +26,7 @@ const Settings: React.FC = () => {
             className="app-nodrag"
             title={t('pages.settings.githubRepo')}
             onClick={() => {
-              window.open('https://github.com/coolcoala/vrp-vpn')
+              window.open('https://github.com/Xelbor/vrp-vpn-app')
             }}
           >
             <Github className="text-lg" />
