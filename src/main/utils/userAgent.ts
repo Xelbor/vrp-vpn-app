@@ -7,5 +7,5 @@ export async function getUserAgent(): Promise<string> {
     return userAgent
   }
 
-  return `vrp-vpn/${version}`
+  return `mihomo/${version} (vrp-vpn)`
 }
