@@ -4,18 +4,25 @@ import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import { useGroups } from '@renderer/hooks/use-groups'
-import { triggerSysProxy, updateTrayIcon, mihomoHotReloadConfig } from '@renderer/utils/ipc'
+import {
+  triggerSysProxy,
+  updateTrayIcon,
+  mihomoHotReloadConfig,
+  mihomoChangeProxy,
+  mihomoCloseAllConnections,
+  mihomoProxyDelay
+} from '@renderer/utils/ipc'
 import NumberFlow from '@number-flow/react'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import Power from '@renderer/assets/on_icon.svg'
 import Pause from '@renderer/assets/pause_icon.svg'
-import { InfinityIcon, WifiOff, PlusCircle, ChevronRight, Globe, ArrowUp, ArrowDown, RefreshCcw } from 'lucide-react'
+import { InfinityIcon, WifiOff, PlusCircle, Globe, ArrowUp, ArrowDown, RefreshCcw, ChevronsUpDown, Check, Gauge } from 'lucide-react'
 import { SiTelegram } from 'react-icons/si'
 import EditInfoModal from '@renderer/components/profiles/edit-info-modal'
 import { Spinner } from '@renderer/components/ui/spinner'
+import { Popover, PopoverContent, PopoverTrigger } from '@renderer/components/ui/popover'
 import { CharacterMorph } from '@renderer/components/ui/character-morph'
 import { calcTraffic } from '@renderer/utils/calc'
 import { useTrafficStore } from '@renderer/store/traffic-store'
@@ -25,6 +32,20 @@ function formatBytes(bytes: number): string {
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
   return `${(bytes / Math.pow(1024, i)).toFixed(i > 1 ? 1 : 0)} ${units[i]}`
+}
+
+function proxyDelay(proxy: ControllerProxiesDetail | ControllerGroupDetail): number {
+  if (proxy.history.length > 0) {
+    return proxy.history[proxy.history.length - 1].delay
+  }
+  return -1
+}
+
+function delayColorClass(delay: number): string {
+  if (delay === -1) return 'text-muted-foreground'
+  if (delay === 0) return 'text-destructive'
+  if (delay < 500) return 'text-success'
+  return 'text-warning'
 }
 
 // Module-level variable: persists across component mounts/unmounts
@@ -38,6 +59,8 @@ const Home: React.FC = () => {
     sysProxy,
     proxyMode = false,
     onlyActiveDevice = false,
+    autoCloseConnection = true,
+    delayTestConcurrency = 50,
   } = appConfig || {}
   const { enable: writeSysProxy = true, mode } = sysProxy || {}
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
@@ -46,8 +69,7 @@ const Home: React.FC = () => {
   const sysProxyDisabled = mixedPort == 0
 
   const { profileConfig, addProfileItem } = useProfileConfig()
-  const { groups } = useGroups()
-  const navigate = useNavigate()
+  const { groups, mutate: mutateGroups } = useGroups()
   const hasProfiles = (profileConfig?.items?.length ?? 0) > 0
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingItem, setEditingItem] = useState<ProfileItem | null>(null)
@@ -149,6 +171,57 @@ const Home: React.FC = () => {
     expireTimestamp > 0 ? Math.max(0, dayjs.unix(expireTimestamp).diff(dayjs(), 'day')) : 0
 
   const firstGroup = groups?.[0]
+  const [serverMenuOpen, setServerMenuOpen] = useState(false)
+  const [switchingProxy, setSwitchingProxy] = useState<string | null>(null)
+  const [pingTesting, setPingTesting] = useState(false)
+
+  const handlePingAll = async (): Promise<void> => {
+    if (!firstGroup || pingTesting) return
+    setPingTesting(true)
+    try {
+      const queue = [...firstGroup.all]
+      const concurrency = Math.min(delayTestConcurrency || 50, queue.length) || 1
+      const worker = async (): Promise<void> => {
+        while (queue.length > 0) {
+          const proxy = queue.shift()
+          if (!proxy) break
+          try {
+            await mihomoProxyDelay(proxy.name, firstGroup.testUrl)
+          } catch {
+            // ignore individual node failures
+          }
+        }
+      }
+      await Promise.all(Array.from({ length: concurrency }, worker))
+      mutateGroups()
+    } finally {
+      setPingTesting(false)
+    }
+  }
+
+  const currentServerDelay = useMemo(() => {
+    if (!firstGroup) return -1
+    const current = firstGroup.all.find((proxy) => proxy.name === firstGroup.now)
+    return current ? proxyDelay(current) : -1
+  }, [firstGroup])
+
+  const handleChangeProxy = async (groupName: string, proxyName: string): Promise<void> => {
+    if (switchingProxy) return
+    setSwitchingProxy(proxyName)
+    try {
+      await mihomoChangeProxy(groupName, proxyName)
+      if (autoCloseConnection) {
+        await mihomoCloseAllConnections(groupName)
+      }
+      mutateGroups()
+      setServerMenuOpen(false)
+    } catch (e) {
+      toast.error(`${e}`)
+    } finally {
+      setSwitchingProxy(null)
+    }
+  }
+
   const supportUrl = currentProfile?.supportUrl
   const supportLinkInfo = useMemo(() => {
     if (!supportUrl) return null
@@ -246,7 +319,7 @@ const Home: React.FC = () => {
         <div className="flex flex-col h-full px-2 pb-2 gap-3">
           {/* Profile card */}
           {currentProfile && (
-            <div className="rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl p-4">
+            <div className="rounded-2xl border border-stroke bg-card/40 backdrop-blur-xl p-4">
               <div
                 data-guide="home-profile-header"
                 className="flex items-center justify-center gap-3"
@@ -323,10 +396,11 @@ const Home: React.FC = () => {
               className="relative group transition-transform active:scale-95 cursor-pointer"
             >
               <div
-                className={`w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300 bg-radial-[at_30%_45%] backdrop-blur-xl border-2 ${
+                className={`w-35 h-35 rounded-full flex items-center justify-center transition-all duration-300 bg-radi
+al-[at_30%_45%] backdrop-blur-xl border-2 group-hover:brightness-110 ${
                   isSelected
-                    ? 'from-gradient-start-power-on/60 to-gradient-end-power-on/60 border-stroke-power-on'
-                    : 'from-gradient-start-power-off/50 to-gradient-end-power-off/50 border-stroke-power-off'
+                    ? 'from-gradient-start-power-on/60 to-gradient-end-power-on/60 border-stroke-power-on shadow-[0_0_15px_8px] shadow-stroke-power-on/50 group-hover:shadow-[0_0_25px_10px] group-hover:shadow-stroke-power-on/60'
+                    : 'from-gradient-start-power-off/60 to-gradient-end-power-off/60 border-zinc-400/60 group-hover:shadow-[0_0_15px_8px] group-hover:shadow-zinc-300/40'
                 } ${loading ? 'animate-none' : ''}`}
               >
                 <div className="relative size-16">
@@ -350,7 +424,7 @@ const Home: React.FC = () => {
                     }`}
                   />
                 </div>
-              </div>
+                </div>
             </button>
             <div className="mt-3 h-8 flex items-center justify-center">
               <div
@@ -393,23 +467,95 @@ const Home: React.FC = () => {
             </div>
           </div>
 
-          {/* Group & Proxy selectors */}
+          <div className="flex flex-col gap-3 -translate-y-4">
+          {/* Server selector */}
           {firstGroup && (
-            <div className="flag-emoji flex flex-col items-center mx-auto w-full max-w-3xs max-h-16">
-              <div
-                data-guide="home-group-selector"
-                className="w-full cursor-pointer"
-                onClick={() => navigate('/proxies', { state: { fromHome: true } })}
-              >
-                <div className="flex items-center justify-between h-9 rounded-2xl border border-stroke pl-3 pr-1 py-3 backdrop-blur-xl bg-card/50 transition-colors hover:bg-card/70">
-                  <div className="flag-emoji text-sm truncate max-w-52">
-                    {firstGroup.now || firstGroup.name}
+            <div className="relative max-w-xs mx-auto w-full">
+            <Popover open={serverMenuOpen} onOpenChange={setServerMenuOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  data-guide="home-group-selector"
+                  className="group w-full min-w-0 cursor-pointer outline-hidden max-h-16"
+                >
+                  <div className="flex items-center gap-3 rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl p-3 transition-colors hover:bg-card/70">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-gradient-start-power-on/10 text-stroke-power-on">
+                      <Globe className="size-5" />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col text-left">
+                      <span className="text-xs text-muted-foreground leading-tight">
+                        {t('pages.home.server')}
+                      </span>
+                      <span className="flag-emoji truncate text-sm font-medium leading-tight mt-0.5">
+                        {firstGroup.now || firstGroup.name}
+                      </span>
+                    </div>
+                    {currentServerDelay > 0 && (
+                      <span
+                        className={`shrink-0 text-xs font-medium tabular-nums ${delayColorClass(currentServerDelay)}`}
+                      >
+                        {currentServerDelay} ms
+                      </span>
+                    )}
+                    <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                   </div>
-                  <ChevronRight />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="top"
+                align="center"
+                sideOffset={6}
+                className="w-(--radix-popover-trigger-width) max-w-xs p-1.5"
+              >
+                <div className="flag-emoji flex flex-col gap-0.5 max-h-64 overflow-y-auto">
+                  {firstGroup.all.map((proxy) => {
+                    const delay = proxyDelay(proxy)
+                    const selected = proxy.name === firstGroup.now
+                    return (
+                      <button
+                        key={proxy.name}
+                        disabled={switchingProxy !== null}
+                        onClick={() => handleChangeProxy(firstGroup.name, proxy.name)}
+                        className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left transition-colors cursor-pointer disabled:cursor-default ${
+                          selected ? 'bg-primary/10' : 'hover:bg-accent/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Check
+                            className={`size-4 shrink-0 text-primary ${selected ? 'opacity-100' : 'opacity-0'}`}
+                          />
+                          <span className="text-sm truncate" title={proxy.name}>
+                            {proxy.name}
+                          </span>
+                        </div>
+                        <span className="shrink-0 inline-flex items-center justify-center w-10">
+                          {switchingProxy === proxy.name ? (
+                            <Spinner className="size-3.5" />
+                          ) : (
+                            <span
+                              className={`text-xs font-medium tabular-nums ${delayColorClass(delay)}`}
+                            >
+                              {delay <= 0 ? '—' : delay}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
-              </div>
+              </PopoverContent>
+            </Popover>
+            <button
+              onClick={handlePingAll}
+              disabled={pingTesting}
+              title={t('pages.home.pingTest')}
+              aria-busy={pingTesting}
+              className="absolute left-full top-0 ml-2 flex h-full w-11 items-center justify-center rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl text-muted-foreground transition-colors hover:bg-card/70 hover:text-foreground disabled:opacity-50 cursor-pointer"
+            >
+              {pingTesting ? <Spinner className="size-5" /> : <Gauge className="size-5" />}
+            </button>
             </div>
           )}
+
           {supportLinkInfo && (
             <div className="flex justify-center text-sm text-muted-foreground">
               <button
@@ -427,6 +573,7 @@ const Home: React.FC = () => {
               </button>
             </div>
           )}
+          </div>
         </div>
       )}
     </BasePage>

@@ -59,8 +59,8 @@ const ProcessItemComponent: React.FC<Props> = ({ process, displayIcon, displayAp
           transition-all duration-200 ease-out
           ${
             hasActive
-              ? 'border-stroke-power-on/30 bg-linear-to-r from-gradient-start-power-on/[0.06] to-card/40 hover:border-stroke-power-on/50 shadow-sm'
-              : 'border-border bg-card/40 hover:bg-accent/50'
+              ? 'border-stroke-power-on/30 backdrop-blur-xl bg-linear-to-r from-gradient-start-power-on/[0.06] to-card/40 hover:border-stroke-power-on/50 shadow-sm'
+              : 'border-border bg-card/50 backdrop-blur-xl hover:bg-accent/50'
           }
         `}
         onClick={() => onClick(process.processPath)}

@@ -7,9 +7,11 @@ import {
   patchControledMihomoConfig
 } from '../config'
 import icoIcon from '../../../resources/icon.ico?asset'
-import icoIconOff from '../../../resources/icon_off.ico?asset'
+import icoIconBlackOff from '../../../resources/icon_black_off.ico?asset'
+import icoIconWhiteOff from '../../../resources/icon_white_off.ico?asset'
 import pngIcon from '../../../resources/icon.png?asset'
-import pngIconOff from '../../../resources/icon_off.png?asset'
+import pngIconBlackOff from '../../../resources/icon_black_off.png?asset'
+import pngIconWhiteOff from '../../../resources/icon_white_off.png?asset'
 import macIconOn from '../../../resources/icon_on_mac.png?asset'
 import macIconOff from '../../../resources/icon_off_mac.png?asset'
 import {
@@ -27,6 +29,7 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  nativeTheme,
   screen,
   Tray
 } from 'electron'
@@ -378,6 +381,10 @@ export async function createTray(): Promise<void> {
   }
   tray?.setToolTip('VRP VPN')
   tray?.setIgnoreDoubleClickEvents(true)
+  nativeTheme.removeAllListeners('updated')
+  nativeTheme.on('updated', () => {
+    updateTrayIcon()
+  })
   await updateTrayIcon()
   if (process.platform === 'darwin') {
     if (!useDockIcon && app.dock) {
@@ -479,6 +486,7 @@ export async function updateTrayIcon(): Promise<void> {
   const { proxyMode = false } = await getAppConfig()
   const { tun } = await getControledMihomoConfig()
   const proxyEnabled = proxyMode || (tun?.enable ?? false)
+  const isDark = nativeTheme.shouldUseDarkColors
 
   try {
     if (process.platform === 'darwin') {
@@ -487,9 +495,9 @@ export async function updateTrayIcon(): Promise<void> {
       icon.setTemplateImage(true)
       tray.setImage(icon)
     } else if (process.platform === 'win32') {
-      tray.setImage(proxyEnabled ? icoIcon : icoIconOff)
+      tray.setImage(proxyEnabled ? icoIcon : isDark ? icoIconBlackOff : icoIconWhiteOff)
     } else {
-      tray.setImage(proxyEnabled ? pngIcon : pngIconOff)
+      tray.setImage(proxyEnabled ? pngIcon : isDark ? pngIconBlackOff : pngIconWhiteOff)
     }
   } catch {
     // ignore

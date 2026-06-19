@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
 import React, { useEffect, useRef, useState } from 'react'
-import { NavigateFunction, useLocation, useNavigate, useRoutes } from 'react-router-dom'
+import { NavigateFunction, useNavigate, useRoutes } from 'react-router-dom'
 import './i18n'
 import { useTranslation } from 'react-i18next'
 import routes from '@renderer/routes'
@@ -21,8 +21,6 @@ import AppSidebar from '@renderer/components/app-sidebar'
 import UpdateBanner from '@renderer/components/updater/update-banner'
 import HwidLimitAlert from '@renderer/components/profiles/hwid-limit-alert'
 import WindowControls from '@renderer/components/window-controls'
-import mapDark from '@renderer/assets/map_darktheme.svg'
-import mapLight from '@renderer/assets/map_lighttheme.svg'
 import { attachConnectionsStore } from '@renderer/store/connections-store'
 import { attachTrafficStore } from '@renderer/store/traffic-store'
 import { attachLogsStore } from '@renderer/store/logs-store'
@@ -40,10 +38,7 @@ const App: React.FC = () => {
     autoCheckUpdate
   } = appConfig || {}
   const { setTheme, systemTheme, resolvedTheme } = useTheme()
-  const mapBg = resolvedTheme === 'dark' ? mapDark : mapLight
   navigate = useNavigate()
-  const location = useLocation()
-  const isHome = location.pathname === '/' || location.pathname.includes('/home')
   const page = useRoutes(routes)
   const { data: latest } = useSWR(
     autoCheckUpdate ? ['checkUpdate'] : undefined,
@@ -153,14 +148,11 @@ const App: React.FC = () => {
     <SidebarProvider
       defaultOpen={false}
       className="relative w-full h-screen overflow-hidden"
-      style={{ backgroundColor: resolvedTheme === 'dark' ? '#080F16' : '#C5D4F1' }}
+      style={{ backgroundColor: resolvedTheme === 'dark' ? '#0A0A0A' : '#F2F2F2' }}
     >
-      <img
-        src={mapBg}
-        alt=""
-        className={`pointer-events-none absolute inset-0 opacity-65 w-full h-full object-cover z-0 transition-[filter] duration-500 ${
-          isHome ? '' : 'blur-3xl'
-        }`}
+      <div
+        aria-hidden
+        className="grid-bg pointer-events-none absolute inset-0 w-full h-full z-0"
       />
       {showQuitConfirm && (
         <ConfirmModal

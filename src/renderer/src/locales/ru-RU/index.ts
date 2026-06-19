@@ -168,7 +168,9 @@ export default {
       proxy: 'Прокси:',
       noProfile: 'Нет активного профиля',
       unlimited: 'Безлимит',
-      never: 'Никогда'
+      never: 'Никогда',
+      server: 'Сервер',
+      pingTest: 'Проверить пинг всех серверов'
     },
     settings: {
       title: 'Настройки приложения',

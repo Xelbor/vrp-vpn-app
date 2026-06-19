@@ -11,7 +11,7 @@ const LogItem: React.FC<ControllerLog & { index: number }> = (props) => {
   const { type, payload, time, index } = props
   return (
     <div className={`select-text px-2 pb-2 ${index === 0 ? 'pt-2' : ''}`}>
-      <Card className="gap-0 py-0">
+      <Card className="gap-0 py-0 bg-card/50 backdrop-blur-xl">
         <CardHeader className="pb-0 pt-1 px-3 gap-1">
           <div className={`mr-2 text-lg font-bold ${colorMap[type]}`}>
             {props.type.toUpperCase()}

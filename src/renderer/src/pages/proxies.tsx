@@ -37,15 +37,13 @@ import {
   Zap
 } from 'lucide-react'
 
+const groupTypeBadge = 'border-foreground/20 bg-foreground/8 text-foreground/80'
 const groupTypeColor: Record<string, string> = {
-  Selector: 'border-blue-500/40 bg-blue-500/8 text-blue-600 dark:text-blue-400 dark:border-blue-400/40',
-  URLTest:
-    'border-emerald-500/40 bg-emerald-500/8 text-emerald-600 dark:text-emerald-400 dark:border-emerald-400/40',
-  Fallback:
-    'border-amber-500/40 bg-amber-500/8 text-amber-600 dark:text-amber-400 dark:border-amber-400/40',
-  LoadBalance:
-    'border-violet-500/40 bg-violet-500/8 text-violet-600 dark:text-violet-400 dark:border-violet-400/40',
-  Relay: 'border-rose-500/40 bg-rose-500/8 text-rose-600 dark:text-rose-400 dark:border-rose-400/40'
+  Selector: groupTypeBadge,
+  URLTest: groupTypeBadge,
+  Fallback: groupTypeBadge,
+  LoadBalance: groupTypeBadge,
+  Relay: groupTypeBadge
 }
 
 const groupTypeIcon: Record<string, React.ReactNode> = {
@@ -472,7 +470,7 @@ const Proxies: React.FC = () => {
       return currentAllProxies[groupIndex] ? (
         <div className="flow-root">
           <div
-            className={cn('mx-2 bg-card/30 border-x border-border/50', innerIndex === 0 && '-mt-5 pt-3', isLastRow && 'rounded-b-xl border-b shadow-sm mb-2', shouldAnimate && 'animate-proxy-row-enter')}
+            className={cn('mx-2 bg-card/30 backdrop-blur-xl border-x border-border/50', innerIndex === 0 && '-mt-5 pt-3', isLastRow && 'rounded-b-xl border-b shadow-sm mb-2', shouldAnimate && 'animate-proxy-row-enter')}
             style={shouldAnimate ? { animationDelay: `${Math.min(innerIndex * 0.04, 0.3)}s` } : undefined}
           >
             <div

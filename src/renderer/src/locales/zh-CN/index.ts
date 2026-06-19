@@ -242,7 +242,9 @@ export default {
       proxy: '代理:',
       noProfile: '没有活动配置',
       unlimited: '无限',
-      never: '永不'
+      never: '永不',
+      server: '节点',
+      pingTest: '测试所有节点延迟'
     },
     settings: {
       title: '应用设置',

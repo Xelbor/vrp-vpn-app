@@ -167,7 +167,9 @@ export default {
       proxy: 'Proxy:',
       noProfile: 'No active profile',
       unlimited: 'Unlimited',
-      never: 'Never'
+      never: 'Never',
+      server: 'Server',
+      pingTest: 'Ping all servers'
     },
     settings: {
       title: 'Application Settings',

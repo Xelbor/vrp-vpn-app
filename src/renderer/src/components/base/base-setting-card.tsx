@@ -10,12 +10,12 @@ interface Props {
 
 const SettingCard: React.FC<Props> = (props) => {
   return !props.title ? (
-    <Card className={`${props.className} mx-2 mb-2`}>
+    <Card className={`${props.className} mx-2 mb-2 bg-card/50 backdrop-blur-xl`}>
       <CardContent>{props.children}</CardContent>
     </Card>
   ) : (
     <Accordion
-      className={`${props.className} mx-2 mb-2 px-6 rounded-xl border text-card-foreground shadow-sm`}
+      className={`${props.className} mx-2 mb-2 px-6 rounded-xl border bg-card/50 backdrop-blur-xl text-card-foreground shadow-sm`}
       type="single"
       collapsible
       {...props}
