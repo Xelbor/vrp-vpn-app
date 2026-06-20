@@ -37,6 +37,7 @@ interface AppConfig {
   connectionOrderBy: 'time' | 'upload' | 'download' | 'uploadSpeed' | 'downloadSpeed' | 'process'
   connectionListMode?: 'classic' | 'process'
   connectionViewMode?: 'list' | 'table'
+  bypassVpnProcesses?: string[]
   connectionTableColumns?: string[]
   connectionTableColumnWidths?: Record<string, number>
   connectionTableSortColumn?: string

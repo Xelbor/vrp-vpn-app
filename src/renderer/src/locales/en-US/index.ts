@@ -227,7 +227,11 @@ export default {
       unknownProcess: 'Unknown',
       classicView: 'Classic view',
       processView: 'By process',
-      connectionListMode: 'Connections display mode'
+      connectionListMode: 'Connections display mode',
+      vpnEnabled: 'VPN',
+      vpnDisabled: 'Direct',
+      vpnToggleHint: 'Toggle VPN for this app',
+      vpnApplying: 'Applying…'
     },
     logs: {
       title: 'Real-time Logs',

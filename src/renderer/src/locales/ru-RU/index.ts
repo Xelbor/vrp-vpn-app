@@ -228,7 +228,11 @@ export default {
       unknownProcess: 'Неизвестный',
       classicView: 'Классический вид',
       processView: 'По процессам',
-      connectionListMode: 'Режим отображения соединений'
+      connectionListMode: 'Режим отображения соединений',
+      vpnEnabled: 'VPN',
+      vpnDisabled: 'Напрямую',
+      vpnToggleHint: 'Включить/отключить VPN для приложения',
+      vpnApplying: 'Применение…'
     },
     logs: {
       title: 'Логи',

@@ -301,7 +301,11 @@ export default {
       unknownProcess: '未知',
       classicView: '经典视图',
       processView: '按进程',
-      connectionListMode: '连接显示模式'
+      connectionListMode: '连接显示模式',
+      vpnEnabled: 'VPN',
+      vpnDisabled: '直连',
+      vpnToggleHint: '为此应用切换 VPN',
+      vpnApplying: '应用中…'
     },
     logs: {
       title: '实时日志',

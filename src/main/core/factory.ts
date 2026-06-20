@@ -133,6 +133,25 @@ export async function generateProfile(): Promise<void> {
     }
   }
 
+  // Per-app VPN bypass: route the selected processes directly (Connections tab switches)
+  const bypassVpnProcesses = appConfig.bypassVpnProcesses
+  if (bypassVpnProcesses?.length) {
+    if (!currentProfile.rules) {
+      currentProfile.rules = [] as unknown as []
+    }
+    const existingRules = [...currentProfile.rules] as unknown as string[]
+    const seen = new Set<string>()
+    const bypassRules = bypassVpnProcesses
+      .map((name) => (name || '').trim())
+      .filter((name) => {
+        if (!name || seen.has(name)) return false
+        seen.add(name)
+        return true
+      })
+      .map((name) => `PROCESS-NAME,${name},DIRECT`)
+    currentProfile.rules = [...bypassRules, ...existingRules] as unknown as []
+  }
+
   const profile = deepMerge(JSON.parse(JSON.stringify(currentProfile)), configToMerge)
 
   const tunEnabled = profile.tun?.enable ?? false

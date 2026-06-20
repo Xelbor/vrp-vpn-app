@@ -1,5 +1,10 @@
 import BasePage from '@renderer/components/base/base-page'
-import { mihomoCloseAllConnections, mihomoCloseConnection } from '@renderer/utils/ipc'
+import {
+  mihomoCloseAllConnections,
+  mihomoCloseConnection,
+  mihomoHotReloadConfig
+} from '@renderer/utils/ipc'
+import { toast } from 'sonner'
 import { useConnectionsStore } from '@renderer/store/connections-store'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Badge } from '@renderer/components/ui/badge'
@@ -28,7 +33,7 @@ import { calcTraffic } from '@renderer/utils/calc'
 import ConnectionItem from '@renderer/components/connections/connection-item'
 import ConnectionTable from '@renderer/components/connections/connection-table'
 import ProcessItem, { ProcessGroup } from '@renderer/components/connections/process-item'
-import { Virtuoso } from 'react-virtuoso'
+import { Virtuoso, VirtuosoGrid } from 'react-virtuoso'
 import dayjs from 'dayjs'
 import ConnectionDetailModal from '@renderer/components/connections/connection-detail-modal'
 import ConnectionSettingModal from '@renderer/components/connections/connection-setting-modal'
@@ -79,8 +84,12 @@ const Connections: React.FC = () => {
     connectionTableSortColumn,
     connectionTableSortDirection,
     displayIcon = true,
-    displayAppName = true
+    displayAppName = true,
+    bypassVpnProcesses = []
   } = appConfig || {}
+
+  const bypassVpnSet = useMemo(() => new Set(bypassVpnProcesses), [bypassVpnProcesses])
+  const [pendingVpnProcesses, setPendingVpnProcesses] = useState<Set<string>>(new Set())
   const info = useConnectionsStore((s) => s.info)
   const activeConnections = useConnectionsStore((s) => s.active)
   const closedConnections = useConnectionsStore((s) => s.closed)
@@ -134,6 +143,7 @@ const Connections: React.FC = () => {
       {
         processPath: string
         processName: string
+        hasProcess: boolean
         activeCount: number
         closedCount: number
         totalUpload: number
@@ -146,6 +156,7 @@ const Connections: React.FC = () => {
     const addToGroup = (conn: ControllerConnectionDetail, isActive: boolean) => {
       const processPath =
         conn.metadata.processPath || conn.metadata.process || conn.metadata.sourceIP || ''
+      const hasProcess = Boolean(conn.metadata.process)
       const processName = conn.metadata.process || conn.metadata.sourceIP || ''
       const existing = groupMap.get(processPath)
       if (existing) {
@@ -162,6 +173,7 @@ const Connections: React.FC = () => {
         groupMap.set(processPath, {
           processPath,
           processName,
+          hasProcess,
           activeCount: isActive ? 1 : 0,
           closedCount: isActive ? 0 : 1,
           totalUpload: conn.upload,
@@ -359,6 +371,35 @@ const Connections: React.FC = () => {
     setTab('active')
   }, [])
 
+  const handleToggleVpn = useCallback(
+    async (processName: string, enabled: boolean) => {
+      if (!processName) return
+      const currentList = appConfig?.bypassVpnProcesses || []
+      const nextList = enabled
+        ? currentList.filter((n) => n !== processName)
+        : Array.from(new Set([...currentList, processName]))
+
+      setPendingVpnProcesses((prev) => {
+        const next = new Set(prev)
+        next.add(processName)
+        return next
+      })
+      try {
+        await patchAppConfig({ bypassVpnProcesses: nextList })
+        await mihomoHotReloadConfig()
+      } catch (e) {
+        toast.error(`${e}`)
+      } finally {
+        setPendingVpnProcesses((prev) => {
+          const next = new Set(prev)
+          next.delete(processName)
+          return next
+        })
+      }
+    },
+    [appConfig, patchAppConfig]
+  )
+
   const handleBackToProcesses = useCallback(() => {
     setSelectedProcess(null)
     setFilter('')
@@ -424,11 +465,21 @@ const Connections: React.FC = () => {
           process={process}
           displayIcon={iconEnabled}
           displayAppName={displayAppName}
+          vpnBypassed={bypassVpnSet.has(process.processName)}
+          vpnPending={pendingVpnProcesses.has(process.processName)}
           onClick={handleProcessClick}
+          onToggleVpn={handleToggleVpn}
         />
       )
     },
-    [iconEnabled, displayAppName, handleProcessClick]
+    [
+      iconEnabled,
+      displayAppName,
+      handleProcessClick,
+      handleToggleVpn,
+      bypassVpnSet,
+      pendingVpnProcesses
+    ]
   )
 
   // Whether we are in the process list view (level 1) or connections view (level 2)
@@ -688,10 +739,11 @@ const Connections: React.FC = () => {
       </div>
       <div className="h-[calc(100vh-106px)] mt-px mb-2">
         {isProcessListView ? (
-          <Virtuoso
+          <VirtuosoGrid
             data={filteredProcessGroups}
+            listClassName="grid grid-cols-2 gap-y-0 px-1"
             itemContent={renderProcessItem}
-            initialItemCount={Math.min(filteredProcessGroups.length, 15)}
+            initialItemCount={Math.min(filteredProcessGroups.length, 16)}
           />
         ) : viewMode === 'list' ? (
           <Virtuoso
