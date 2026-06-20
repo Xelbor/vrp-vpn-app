@@ -1,7 +1,7 @@
-## 1.3.1
+### **V0.1.0**
 
-- fixed system proxy
-- fixed bug from issue #89
+> - Added new UI
+> - Reworked homepage
 
 ## 1.3.0
 
