@@ -1,5 +1,5 @@
 appId: com.vrp-vpn
-productName: VRP VPN
+productName: VRP-VPN
 directories:
   buildResources: build
 files:
@@ -59,7 +59,7 @@ pkg:
 linux:
   desktop:
     entry:
-      Name: VRP VPN
+      Name: VRP-VPN
       MimeType: 'x-scheme-handler/clash;x-scheme-handler/mihomo;x-scheme-handler/vrp-vpn'
   target:
     - deb
