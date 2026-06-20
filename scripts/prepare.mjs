@@ -301,7 +301,7 @@ const resolveSparkleService = () => {
 const resolveRunner = () =>
   resolveResource({
     file: 'vrp-vpn-run.exe',
-    downloadURL: `https://github.com/Xelbor/vrp-vpn-run/releases/download/${arch}/vrp-vpn-run.exe`
+    downloadURL: `https://github.com/coolcoala/koala-clash-run/releases/download/${arch}/koala-clash-run.exe`
   })
 
 const resolve7zip = () =>

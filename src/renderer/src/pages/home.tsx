@@ -60,7 +60,6 @@ const Home: React.FC = () => {
     proxyMode = false,
     onlyActiveDevice = false,
     autoCloseConnection = true,
-    delayTestConcurrency = 50,
   } = appConfig || {}
   const { enable: writeSysProxy = true, mode } = sysProxy || {}
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
@@ -176,24 +175,13 @@ const Home: React.FC = () => {
   const [pingTesting, setPingTesting] = useState(false)
 
   const handlePingAll = async (): Promise<void> => {
-    if (!firstGroup || pingTesting) return
+    if (!firstGroup || !firstGroup.now || pingTesting) return
     setPingTesting(true)
     try {
-      const queue = [...firstGroup.all]
-      const concurrency = Math.min(delayTestConcurrency || 50, queue.length) || 1
-      const worker = async (): Promise<void> => {
-        while (queue.length > 0) {
-          const proxy = queue.shift()
-          if (!proxy) break
-          try {
-            await mihomoProxyDelay(proxy.name, firstGroup.testUrl)
-          } catch {
-            // ignore individual node failures
-          }
-        }
-      }
-      await Promise.all(Array.from({ length: concurrency }, worker))
+      await mihomoProxyDelay(firstGroup.now, firstGroup.testUrl)
       mutateGroups()
+    } catch {
+      // ignore node failure
     } finally {
       setPingTesting(false)
     }
