@@ -17,7 +17,7 @@ function Switch({
       className={cn(
         "peer group/switch inline-flex shrink-0 items-center rounded-full border transition-all outline-none disabled:cursor-not-allowed disabled:opacity-50",
         "data-[state=unchecked]:border-stroke data-[state=unchecked]:bg-card/50 data-[state=unchecked]:backdrop-blur-xl",
-        "data-[state=checked]:border-stroke-power-on data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-gradient-start-power-on data-[state=checked]:to-gradient-end-power-on",
+        "data-[state=checked]:border-emerald-500 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-emerald-500 data-[state=checked]:to-emerald-600",
         "focus-visible:ring-2 focus-visible:ring-stroke",
         "data-[size=default]:h-5 data-[size=default]:w-9 data-[size=sm]:h-4 data-[size=sm]:w-7",
         className

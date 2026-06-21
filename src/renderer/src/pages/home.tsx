@@ -14,7 +14,7 @@ import {
 } from '@renderer/utils/ipc'
 import NumberFlow from '@number-flow/react'
 import { useTranslation } from 'react-i18next'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import Power from '@renderer/assets/on_icon.svg'
 import Pause from '@renderer/assets/pause_icon.svg'
@@ -192,6 +192,43 @@ const Home: React.FC = () => {
     const current = firstGroup.all.find((proxy) => proxy.name === firstGroup.now)
     return current ? proxyDelay(current) : -1
   }, [firstGroup])
+
+  // Keep handlePingAll fresh for the interval without restarting it on every render
+  const pingAllRef = useRef(handlePingAll)
+  pingAllRef.current = handlePingAll
+
+  // Periodically refresh the current server's ping while connected and the window
+  // is visible (paused when disconnected or minimized/hidden to avoid loading the
+  // connection unnecessarily)
+  const hasCurrentServer = Boolean(firstGroup?.now)
+  useEffect(() => {
+    if (!hasCurrentServer || !isSelected) return undefined
+    let interval: ReturnType<typeof setInterval> | null = null
+
+    const start = (): void => {
+      if (interval) return
+      interval = setInterval(() => {
+        pingAllRef.current()
+      }, 60000)
+    }
+    const stop = (): void => {
+      if (interval) {
+        clearInterval(interval)
+        interval = null
+      }
+    }
+    const handleVisibility = (): void => {
+      if (document.visibilityState === 'visible') start()
+      else stop()
+    }
+
+    if (document.visibilityState === 'visible') start()
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      stop()
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [hasCurrentServer, isSelected])
 
   const handleChangeProxy = async (groupName: string, proxyName: string): Promise<void> => {
     if (switchingProxy) return
@@ -458,7 +495,7 @@ al-[at_30%_45%] backdrop-blur-xl border-2 group-hover:brightness-110 ${
           <div className="flex flex-col gap-3 -translate-y-4">
           {/* Server selector */}
           {firstGroup && (
-            <div className="relative max-w-xs mx-auto w-full">
+            <div className="max-w-xs mx-auto w-full">
             <Popover open={serverMenuOpen} onOpenChange={setServerMenuOpen}>
               <PopoverTrigger asChild>
                 <button
@@ -477,13 +514,55 @@ al-[at_30%_45%] backdrop-blur-xl border-2 group-hover:brightness-110 ${
                         {firstGroup.now || firstGroup.name}
                       </span>
                     </div>
-                    {currentServerDelay > 0 && (
-                      <span
-                        className={`shrink-0 text-xs font-medium tabular-nums ${delayColorClass(currentServerDelay)}`}
-                      >
-                        {currentServerDelay} ms
-                      </span>
-                    )}
+                    <span className="shrink-0 flex w-14 items-center justify-center">
+                      {pingTesting ? (
+                        <Spinner className="size-4" />
+                      ) : currentServerDelay > 0 ? (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          title={t('pages.home.pingTest')}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handlePingAll()
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handlePingAll()
+                            }
+                          }}
+                          className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+                        >
+                          <span
+                            className={`text-xs font-medium tabular-nums ${delayColorClass(currentServerDelay)}`}
+                          >
+                            {currentServerDelay} ms
+                          </span>
+                        </span>
+                      ) : (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          title={t('pages.home.pingTest')}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handlePingAll()
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handlePingAll()
+                            }
+                          }}
+                          className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+                        >
+                          <Gauge className="size-4" />
+                        </span>
+                      )}
+                    </span>
                     <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                   </div>
                 </button>
@@ -532,15 +611,6 @@ al-[at_30%_45%] backdrop-blur-xl border-2 group-hover:brightness-110 ${
                 </div>
               </PopoverContent>
             </Popover>
-            <button
-              onClick={handlePingAll}
-              disabled={pingTesting}
-              title={t('pages.home.pingTest')}
-              aria-busy={pingTesting}
-              className="absolute left-full top-0 ml-2 flex h-full w-11 items-center justify-center rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl text-muted-foreground transition-colors hover:bg-card/70 hover:text-foreground disabled:opacity-50 cursor-pointer"
-            >
-              {pingTesting ? <Spinner className="size-5" /> : <Gauge className="size-5" />}
-            </button>
             </div>
           )}
 

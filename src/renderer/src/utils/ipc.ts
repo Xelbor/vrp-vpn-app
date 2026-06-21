@@ -27,6 +27,12 @@ export async function mihomoCloseAllConnections(name?: string): Promise<void> {
   )
 }
 
+export async function mihomoCloseConnectionsByProcess(processName: string): Promise<void> {
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('mihomoCloseConnectionsByProcess', processName)
+  )
+}
+
 export async function mihomoRules(): Promise<ControllerRules> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('mihomoRules'))
 }

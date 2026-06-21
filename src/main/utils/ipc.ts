@@ -2,6 +2,7 @@ import { app, ipcMain } from 'electron'
 import {
   mihomoChangeProxy,
   mihomoCloseAllConnections,
+  mihomoCloseConnectionsByProcess,
   mihomoCloseConnection,
   mihomoGroupDelay,
   mihomoGroups,
@@ -141,6 +142,9 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('mihomoCloseConnection', (_e, id) => ipcErrorWrapper(mihomoCloseConnection)(id))
   ipcMain.handle('mihomoCloseAllConnections', (_e, name) =>
     ipcErrorWrapper(mihomoCloseAllConnections)(name)
+  )
+  ipcMain.handle('mihomoCloseConnectionsByProcess', (_e, processName) =>
+    ipcErrorWrapper(mihomoCloseConnectionsByProcess)(processName)
   )
   ipcMain.handle('mihomoRules', ipcErrorWrapper(mihomoRules))
   ipcMain.handle('mihomoProxies', ipcErrorWrapper(mihomoProxies))

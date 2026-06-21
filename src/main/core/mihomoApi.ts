@@ -93,6 +93,20 @@ export const mihomoCloseAllConnections = async (name?: string): Promise<void> =>
   }
 }
 
+export const mihomoCloseConnectionsByProcess = async (processName: string): Promise<void> => {
+  if (!processName) return
+  const connectionsInfo = await mihomoGetConnections()
+  const targetConnections =
+    connectionsInfo?.connections?.filter((conn) => conn.metadata?.process === processName) || []
+  for (const conn of targetConnections) {
+    try {
+      await mihomoCloseConnection(conn.id)
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export const mihomoRules = async (): Promise<ControllerRules> => {
   const instance = await getAxios()
   return await instance.get('/rules')

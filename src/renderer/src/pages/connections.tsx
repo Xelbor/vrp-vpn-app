@@ -2,6 +2,7 @@ import BasePage from '@renderer/components/base/base-page'
 import {
   mihomoCloseAllConnections,
   mihomoCloseConnection,
+  mihomoCloseConnectionsByProcess,
   mihomoHotReloadConfig
 } from '@renderer/utils/ipc'
 import { toast } from 'sonner'
@@ -387,6 +388,10 @@ const Connections: React.FC = () => {
       try {
         await patchAppConfig({ bypassVpnProcesses: nextList })
         await mihomoHotReloadConfig()
+        // Existing connections keep their already-established tunnel after a hot
+        // reload, so the new bypass/proxy rule won't take effect until they are
+        // dropped. Close them so the process reconnects under the new routing.
+        await mihomoCloseConnectionsByProcess(processName)
       } catch (e) {
         toast.error(`${e}`)
       } finally {
