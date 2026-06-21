@@ -1,5 +1,4 @@
 import axios, { AxiosRequestConfig, CancelTokenSource } from 'axios'
-import { parseYaml } from '../utils/yaml'
 import { app, shell } from 'electron'
 import { getRuntimeConfig } from '../core/factory'
 import { dataDir, exeDir, exePath, isPortable, resourcesFilesDir } from '../utils/dirs'
@@ -17,22 +16,31 @@ let downloadCancelToken: CancelTokenSource | null = null
 
 export async function checkUpdate(): Promise<AppVersion | undefined> {
   const { 'mixed-port': mixedPort = 0 } = (await getRuntimeConfig()) ?? {}
-  const url = 'https://github.com/Xelbor/vrp-vpn-app/releases/latest/download/latest.yml'
-  const res = await axios.get(url, {
-    headers: { 'Content-Type': 'application/octet-stream' },
+  // Query the GitHub Releases API directly instead of relying on a `latest.yml`
+  // asset: electron-builder is configured with `publish: []`, so that file is
+  // never generated/uploaded and the old endpoint returned 404, silently
+  // breaking update detection.
+  const url = 'https://api.github.com/repos/Xelbor/vrp-vpn-app/releases/latest'
+  const res = await axios.get<{ tag_name: string; name?: string; body?: string }>(url, {
+    headers: { Accept: 'application/vnd.github.v3+json' },
     ...(mixedPort != 0 && {
       proxy: {
         protocol: 'http',
         host: '127.0.0.1',
         port: mixedPort
       }
-    }),
-    responseType: 'text'
+    })
   })
-  const latest = parseYaml<AppVersion>(res.data)
+  const latestVersion = (res.data.tag_name || '').replace(/^v/, '')
+  if (!latestVersion) {
+    return undefined
+  }
   const currentVersion = app.getVersion()
-  if (latest.version !== currentVersion) {
-    return latest
+  if (latestVersion !== currentVersion) {
+    return {
+      version: latestVersion,
+      changelog: res.data.body || ''
+    }
   } else {
     return undefined
   }
@@ -42,11 +50,13 @@ export async function downloadAndInstallUpdate(version: string): Promise<void> {
   const { 'mixed-port': mixedPort = 0 } = (await getRuntimeConfig()) ?? {}
   const releaseTag = version
   const baseUrl = `https://github.com/Xelbor/vrp-vpn-app/releases/download/${releaseTag}/`
+  // Asset names follow electron-builder's `productName` (VRP-VPN) and the
+  // artifactName templates in electron-builder.yml.
   const fileMap = {
-    'win32-x64': `VRP.VPN_x64-setup.exe`,
-    'win32-arm64': `VRP.VPN_arm64-setup.exe`,
-    'darwin-x64': `VRP.VPN_x64.pkg`,
-    'darwin-arm64': `VRP.VPN_arm64.pkg`
+    'win32-x64': `VRP-VPN_x64-setup.exe`,
+    'win32-arm64': `VRP-VPN_arm64-setup.exe`,
+    'darwin-x64': `VRP-VPN_x64.pkg`,
+    'darwin-arm64': `VRP-VPN_arm64.pkg`
   }
   let file = fileMap[`${process.platform}-${process.arch}`]
   if (isPortable()) {

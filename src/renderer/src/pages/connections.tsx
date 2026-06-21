@@ -190,9 +190,16 @@ const Connections: React.FC = () => {
 
     const groups: ProcessGroup[] = Array.from(groupMap.values())
 
+    // Sort by a stable identity (process name, then path) instead of by
+    // active-connection count or traffic. Those values change on every
+    // refresh, which would make the cards constantly reshuffle and cause the
+    // user to click the wrong process while toggling/opening it.
     groups.sort((a, b) => {
-      if (b.activeCount !== a.activeCount) return b.activeCount - a.activeCount
-      return b.totalUpload + b.totalDownload - (a.totalUpload + a.totalDownload)
+      const byName = a.processName.localeCompare(b.processName, undefined, {
+        sensitivity: 'base'
+      })
+      if (byName !== 0) return byName
+      return a.processPath.localeCompare(b.processPath)
     })
 
     return groups
