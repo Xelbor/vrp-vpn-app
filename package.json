@@ -1,6 +1,6 @@
 {
   "name": "vrp-vpn",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "VRP-VPN",
   "main": "./out/main/index.js",
   "author": "xishang0128, co-author: Xelbor",
