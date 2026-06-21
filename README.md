@@ -1,41 +1,69 @@
 # VRP VPN
+
 <p align="center">
-  <img src="./build/icon.png" alt="Clash" width="128" />
+  <img src="./build/icon.png" alt="VRP VPN" width="128" />
   <br>
   <br>
   <a href="https://github.com/Xelbor/vrp-vpn-app/releases">
     <img src="https://img.shields.io/github/release/Xelbor/vrp-vpn-app/all.svg">
   </a>
 </p>
-<h3 align="center">GUI client for <a href="https://github.com/MetaCubeX/mihomo">Mihomo</a></h3>
 
-## Features
+<h3 align="center">GUI-клиент для <a href="https://github.com/MetaCubeX/mihomo">Mihomo</a> с управлением VPN на уровне процессов</h3>
 
-- [x] Out-of-the-box Tun mode without service mode
-- [x] Multiple color themes
-- [x] Support for most Mihomo configuration options
-- [x] Built-in Mihomo cores (stable and alpha)
+<p align="center">
+  <a href="https://www.vrp-vpn.online">🌐 Сайт</a>
+  &nbsp;•&nbsp;
+  <a href="https://t.me/vrp_vpn_bot">🤖 Telegram-бот</a>
+</p>
 
-## Screenshots
-![Preview](./docs/preview.png)
+<p align="center">
+  <img src="./docs/preview.png" alt="VRP VPN" width="800" />
+</p>
 
-## Development
+## О проекте
 
-### Requirements
+**VRP VPN** — форк клиента [Koala-Clash](https://github.com/coolcoala/koala-clash) с одной ключевой особенностью.
+
+### 🎯 Главная фишка — управление процессами
+
+В отличие от Koala-Clash, VRP VPN позволяет **управлять VPN на уровне отдельных процессов прямо во время работы**. Вы можете на живую отключить VPN для конкретного процесса на ПК — без перезапуска соединения и без правки конфигов. Нужно, чтобы одно приложение шло напрямую, а остальные через туннель? Один клик.
+
+<p align="center">
+  <img src="./docs/preview_connections.png" alt="Управление процессами" width="800" />
+</p>
+
+## Возможности
+
+- [x] **Управление VPN по процессам в реальном времени** — включайте и отключайте туннель для отдельных приложений на лету
+- [x] Tun-режим «из коробки» без service mode
+- [x] Несколько цветовых тем
+- [x] Поддержка большинства опций конфигурации Mihomo
+- [x] Встроенные ядра Mihomo (stable и alpha)
+
+## 🚧 В планах на v0.3.0
+
+- [ ] Поддержка протокола **Hysteria2**
+- [ ] Поддержка транспорта **xHTTP**
+- [ ] **Кастомные темы**, настраиваемые прямо в приложении
+
+## Разработка
+
+### Требования
 
 - **Node.js** >= 20.0.0
 - **pnpm** >= 9.0.0
 - **Git**
 
-### Tech Stack
+### Технологии
 
-VRP VPN is built with Electron + React + TypeScript.
+VRP VPN построен на Electron + React + TypeScript.
 
 **Frontend:** React 19, shadcn/UI, Tailwind CSS, Monaco Editor
 
 **Backend:** Electron, Mihomo Core, sysproxy-go
 
-### Quick Start
+### Быстрый старт
 
 ```bash
 git clone https://github.com/Xelbor/vrp-vpn-app.git
@@ -44,45 +72,45 @@ pnpm install
 pnpm dev
 ```
 
-If Electron fails to install:
+Если Electron не устанавливается:
 
 ```bash
 cd node_modules/electron && node install.js && cd ../..
 ```
 
-### Project Structure
+### Структура проекта
 
 ```
 src/
-├── main/               # Electron main process
-│   ├── core/           # Mihomo core management
-│   ├── config/         # Configuration management
-│   ├── resolve/        # Tray, shortcuts, auto-updater, floating window
-│   ├── sys/            # System integration (sysproxy, autorun)
-│   └── utils/          # Utilities
-├── renderer/           # React frontend
+├── main/               # Основной процесс Electron
+│   ├── core/           # Управление ядром Mihomo
+│   ├── config/         # Управление конфигурацией
+│   ├── resolve/        # Трей, шорткаты, авто-обновление, плавающее окно
+│   ├── sys/            # Системная интеграция (sysproxy, autorun)
+│   └── utils/          # Утилиты
+├── renderer/           # React-фронтенд
 │   └── src/
-│       ├── components/ # React components
-│       ├── pages/      # Page components
-│       ├── hooks/      # Hooks and context providers
-│       └── utils/      # Frontend utilities
-├── preload/            # Preload scripts (IPC bridge)
-└── shared/types/       # Shared TypeScript types
+│       ├── components/ # React-компоненты
+│       ├── pages/      # Страницы
+│       ├── hooks/      # Хуки и context-провайдеры
+│       └── utils/      # Утилиты фронтенда
+├── preload/            # Preload-скрипты (IPC-мост)
+└── shared/types/       # Общие TypeScript-типы
 ```
 
-### Commands
+### Команды
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start dev server (renderer hot reloads, main requires restart) |
-| `pnpm lint` | Run ESLint |
-| `pnpm format` | Run Prettier |
-| `pnpm typecheck` | TypeScript type checking |
-| `pnpm build:win` | Build for Windows |
-| `pnpm build:mac` | Build for macOS |
-| `pnpm build:linux` | Build for Linux |
+| Команда | Описание |
+|---------|----------|
+| `pnpm dev` | Запуск dev-сервера (renderer с hot reload, main требует перезапуска) |
+| `pnpm lint` | Запуск ESLint |
+| `pnpm format` | Запуск Prettier |
+| `pnpm typecheck` | Проверка типов TypeScript |
+| `pnpm build:win` | Сборка под Windows |
+| `pnpm build:mac` | Сборка под macOS |
+| `pnpm build:linux` | Сборка под Linux |
 
-Architecture and format can be specified via flags:
+Архитектуру и формат можно задать через флаги:
 
 ```bash
 pnpm build:win nsis --x64
@@ -90,12 +118,12 @@ pnpm build:mac pkg --arm64
 pnpm build:linux deb --x64
 ```
 
-### Build Artifacts
+### Артефакты сборки
 
-- **Windows**: `.exe` (NSIS installer), `.7z` (portable)
+- **Windows**: `.exe` (NSIS-установщик), `.7z` (portable)
 - **macOS**: `.pkg`
 - **Linux**: `.deb`, `.rpm`, `.pkg.tar.xz` (pacman)
 
-## Credits
+## Благодарности
 
-Based on [Sparkle](https://github.com/xishang0128/sparkle) by [xishang0128](https://github.com/xishang0128).
+Based on [Koala-Clash](https://github.com/coolcoala/koala-clash) by [coolcoala](https://github.com/coolcoala).
