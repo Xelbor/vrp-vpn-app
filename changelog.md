@@ -1,3 +1,8 @@
+## v0.4.0
+- Improvment UI
+- Fixed bug in "Connections"
+- Little fixes and changes
+
 ## v0.2.2
 
 - Fixed auto-update
