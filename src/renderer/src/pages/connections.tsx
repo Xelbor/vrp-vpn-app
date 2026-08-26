@@ -61,7 +61,7 @@ const Connections: React.FC = () => {
   const { controledMihomoConfig } = useControledMihomoConfig()
   const { 'find-process-mode': findProcessMode = 'always' } = controledMihomoConfig || {}
   const [filter, setFilter] = useState('')
-  const { appConfig, patchAppConfig } = useAppConfig()
+  const { appConfig, patchAppConfig, setProcessVpnEnabled } = useAppConfig()
   const {
     connectionDirection = 'asc',
     connectionOrderBy = 'time',
@@ -382,10 +382,6 @@ const Connections: React.FC = () => {
   const handleToggleVpn = useCallback(
     async (processName: string, enabled: boolean) => {
       if (!processName) return
-      const currentList = appConfig?.bypassVpnProcesses || []
-      const nextList = enabled
-        ? currentList.filter((n) => n !== processName)
-        : Array.from(new Set([...currentList, processName]))
 
       setPendingVpnProcesses((prev) => {
         const next = new Set(prev)
@@ -393,7 +389,7 @@ const Connections: React.FC = () => {
         return next
       })
       try {
-        await patchAppConfig({ bypassVpnProcesses: nextList })
+        await setProcessVpnEnabled(processName, enabled)
         await mihomoHotReloadConfig()
         // Existing connections keep their already-established tunnel after a hot
         // reload, so the new bypass/proxy rule won't take effect until they are
@@ -409,7 +405,7 @@ const Connections: React.FC = () => {
         })
       }
     },
-    [appConfig, patchAppConfig]
+    [setProcessVpnEnabled]
   )
 
   const handleBackToProcesses = useCallback(() => {

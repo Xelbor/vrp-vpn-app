@@ -27,6 +27,7 @@ import { checkAutoRun, disableAutoRun, enableAutoRun } from '../sys/autoRun'
 import {
   getAppConfig,
   patchAppConfig,
+  setProcessVpnEnabled,
   getControledMihomoConfig,
   patchControledMihomoConfig,
   getProfileConfig,
@@ -177,6 +178,9 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('disableAutoRun', ipcErrorWrapper(disableAutoRun))
   ipcMain.handle('getAppConfig', (_e, force) => ipcErrorWrapper(getAppConfig)(force))
   ipcMain.handle('patchAppConfig', (_e, config) => ipcErrorWrapper(patchAppConfig)(config))
+  ipcMain.handle('setProcessVpnEnabled', (_e, processName, enabled) =>
+    ipcErrorWrapper(setProcessVpnEnabled)(processName, enabled)
+  )
   ipcMain.handle('getControledMihomoConfig', (_e, force) =>
     ipcErrorWrapper(getControledMihomoConfig)(force)
   )

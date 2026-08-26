@@ -104,6 +104,24 @@ export async function patchAppConfig(patch: Partial<AppConfig>): Promise<void> {
   await writePromise
 }
 
+export async function setProcessVpnEnabled(
+  processName: string,
+  enabled: boolean
+): Promise<void> {
+  const previousPromise = writePromise
+  writePromise = (async () => {
+    await previousPromise
+    await getAppConfig()
+    const currentList = appConfig.bypassVpnProcesses || []
+    const bypassVpnProcesses = enabled
+      ? currentList.filter((name) => name !== processName)
+      : Array.from(new Set([...currentList, processName]))
+    appConfig = deepMerge(appConfig, { bypassVpnProcesses })
+    await safeWriteConfig(stringifyYaml(encryptConfig(appConfig)))
+  })()
+  await writePromise
+}
+
 export function getAppConfigSync(): AppConfig {
   try {
     const raw = readFileSync(appConfigPath(), 'utf-8')

@@ -243,6 +243,8 @@ export default {
       noProfile: '没有活动配置',
       unlimited: '无限',
       never: '永不',
+      subscription: '订阅',
+      profile: '配置',
       server: '节点',
       pingTest: '测试所有节点延迟'
     },
@@ -278,7 +280,15 @@ export default {
       expandAll: '展开全部',
       collapseAll: '收起全部',
       delayTestAll: '全部延迟测试',
-      nodes: '节点'
+      nodes: '节点',
+      loading: '正在加载位置…',
+      loadFailed: '加载位置失败',
+      retry: '重试',
+      noLocations: '未找到可用位置',
+      unresolvedLocations: '无法确定 {{count}} 个节点的位置',
+      globeLabel: '可用代理全球地图',
+      closeCountry: '关闭国家列表',
+      switchFailed: '切换代理失败'
     },
     connections: {
       title: '连接',

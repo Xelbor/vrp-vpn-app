@@ -16,12 +16,25 @@ import NumberFlow from '@number-flow/react'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
-import Power from '@renderer/assets/on_icon.svg'
-import Pause from '@renderer/assets/pause_icon.svg'
-import { InfinityIcon, WifiOff, PlusCircle, Globe, ArrowUp, ArrowDown, RefreshCcw, ChevronsUpDown, Check, Gauge } from 'lucide-react'
+import HomeConnectionGlobe from '@renderer/components/home/home-connection-globe'
+import {
+  InfinityIcon,
+  WifiOff,
+  PlusCircle,
+  Globe,
+  ArrowUp,
+  RefreshCcw,
+  ArrowDown,
+  ChevronsUpDown,
+  Check,
+  Gauge
+} from 'lucide-react'
 import { SiTelegram } from 'react-icons/si'
+import { FiUser } from 'react-icons/fi'
 import EditInfoModal from '@renderer/components/profiles/edit-info-modal'
 import { Spinner } from '@renderer/components/ui/spinner'
+import { Button } from '@renderer/components/ui/button'
+import { Separator } from '@renderer/components/ui/separator'
 import { Popover, PopoverContent, PopoverTrigger } from '@renderer/components/ui/popover'
 import { CharacterMorph } from '@renderer/components/ui/character-morph'
 import { calcTraffic } from '@renderer/utils/calc'
@@ -59,7 +72,7 @@ const Home: React.FC = () => {
     sysProxy,
     proxyMode = false,
     onlyActiveDevice = false,
-    autoCloseConnection = true,
+    autoCloseConnection = true
   } = appConfig || {}
   const { enable: writeSysProxy = true, mode } = sysProxy || {}
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
@@ -165,12 +178,19 @@ const Home: React.FC = () => {
   const trafficTotal = subscription?.total ?? 0
   const trafficRemaining = trafficTotal > 0 ? trafficTotal - trafficUsed : 0
   const expireTimestamp = subscription?.expire ?? 0
-  const expireDate = expireTimestamp > 0 ? dayjs.unix(expireTimestamp).format('L') : t('pages.home.never')
+  const expireDate =
+    expireTimestamp > 0 ? dayjs.unix(expireTimestamp).format('L') : t('pages.home.never')
   const daysRemaining =
     expireTimestamp > 0 ? Math.max(0, dayjs.unix(expireTimestamp).diff(dayjs(), 'day')) : 0
 
   const firstGroup = groups?.[0]
+  const currentProxy = useMemo(() => {
+    const proxy = firstGroup?.all.find((item) => item.name === firstGroup.now)
+    return proxy && !('all' in proxy) ? proxy : undefined
+  }, [firstGroup])
+
   const [serverMenuOpen, setServerMenuOpen] = useState(false)
+  const [connectionButtonHovered, setConnectionButtonHovered] = useState(false)
   const [switchingProxy, setSwitchingProxy] = useState<string | null>(null)
   const [pingTesting, setPingTesting] = useState(false)
 
@@ -256,7 +276,9 @@ const Home: React.FC = () => {
       return {
         href: parsed.toString(),
         isTelegram:
-          parsed.protocol === 'tg:' || normalized.includes('t.me') || normalized.includes('telegram')
+          parsed.protocol === 'tg:' ||
+          normalized.includes('t.me') ||
+          normalized.includes('telegram')
       }
     } catch {
       return null
@@ -341,115 +363,131 @@ const Home: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="flex flex-col h-full px-2 pb-2 gap-3">
+        <div className="flex flex-col h-full px-2 pb-2 gap-2 sm:gap-3">
           {/* Profile card */}
           {currentProfile && (
-            <div className="rounded-2xl border border-stroke bg-card/40 backdrop-blur-xl p-4">
-              <div
-                data-guide="home-profile-header"
-                className="flex items-center justify-center gap-3"
-              >
-                {currentProfile.logo && (
-                  <img
-                    src={currentProfile.logo}
-                    alt=""
-                    className="w-10 h-10 rounded-full"
-                    onError={(e) => {
-                      ;(e.target as HTMLImageElement).style.display = 'none'
-                    }}
-                  />
-                )}
-                <span className="font-medium text-base">{currentProfile.name}</span>
+            <div className="w-full max-w-lg self-center rounded-2xl border border-stroke bg-card/45 p-2 backdrop-blur-xl sm:p-3">
+              <div data-guide="home-profile-header" className="flex min-w-0 items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/90 text-foreground dark:bg-white/10">
+                    {currentProfile.logo ? (
+                      <img
+                        src={currentProfile.logo}
+                        alt=""
+                        className="size-full object-cover"
+                        onError={(e) => {
+                          ;(e.target as HTMLImageElement).style.display = 'none'
+                        }}
+                      />
+                    ) : (
+                      <FiUser className="size-4" aria-hidden="true" />
+                    )}
+                  </div>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {t('pages.home.profile')}
+                    </span>
+                    <span
+                      title={currentProfile.name}
+                      className="truncate text-base font-medium leading-tight text-foreground"
+                    >
+                      {currentProfile.name}
+                    </span>
+                  </div>
+                </div>
                 {currentProfile.type === 'remote' && (
-                  <button
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
                     onClick={handleUpdateProfile}
                     disabled={updating}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50 cursor-pointer"
+                    aria-label={t('profile.updateSubscription')}
+                    title={t('profile.updateSubscription')}
+                    className="shrink-0 text-muted-foreground hover:text-foreground"
                   >
-                    <RefreshCcw className={`size-4 ${updating ? 'animate-spin' : ''}`} />
-                  </button>
+                    <RefreshCcw className={updating ? 'animate-spin' : ''} />
+                  </Button>
                 )}
               </div>
+
               {currentProfile.announce && (
                 <div
                   data-guide="home-profile-announce"
-                  className="text-sm font-medium text-center mt-2 whitespace-pre-line"
+                  className="mt-2 min-w-0 whitespace-pre-line break-words text-left text-xs font-medium text-foreground"
                 >
                   {currentProfile.announce}
                 </div>
               )}
-            </div>
-          )}
-          {/* Subscription info */}
-          {subscription && (
-            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl p-1">
-              <div className="flex flex-col items-center py-2 px-1">
-                <span className="text-sm text-foreground">{t('pages.home.trafficRemaining')}</span>
-                <span className="font-bold text-base mt-0.5">
-                  {trafficTotal > 0 ? formatBytes(trafficRemaining) : <InfinityIcon />}
-                </span>
-              </div>
-              <div className="h-8 w-px bg-stroke" />
-              <div className="flex flex-col items-center py-2 px-1">
-                <span className="text-sm text-foreground">{t('pages.home.daysRemaining')}</span>
-                <span className="text-base font-bold mt-0.5">
-                  {expireTimestamp > 0 ? daysRemaining : <InfinityIcon />}
-                </span>
-              </div>
-              <div className="h-8 w-px bg-stroke" />
-              <div className="flex flex-col items-center py-2 px-1">
-                <span className="text-sm text-foreground">{t('pages.home.expires')}</span>
-                <span className="text-base font-bold mt-0.5">{expireDate}</span>
-              </div>
+
+              {subscription && (
+                <>
+                  <Separator className="my-1 sm:my-2" />
+                  <div className="grid min-w-0 grid-cols-1 divide-y divide-stroke sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                    <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
+                      <span className="text-xs text-muted-foreground">
+                        {t('pages.home.trafficRemaining')}
+                      </span>
+                      <span className="text-sm font-bold tabular-nums">
+                        {trafficTotal > 0 ? (
+                          formatBytes(Math.max(0, trafficRemaining))
+                        ) : (
+                          <InfinityIcon className="size-4" />
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
+                      <span className="text-xs text-muted-foreground">
+                        {t('pages.home.daysRemaining')}
+                      </span>
+                      <span className="text-sm font-bold tabular-nums">
+                        {expireTimestamp > 0 ? daysRemaining : <InfinityIcon className="size-4" />}
+                      </span>
+                    </div>
+                    <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
+                      <span className="text-xs text-muted-foreground">
+                        {t('pages.home.expires')}
+                      </span>
+                      <span className="text-sm font-bold tabular-nums">{expireDate}</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
           {/* Connection button */}
-          <div className="flex flex-col grow-3 items-center justify-center min-h-0">
-            <div className="mb-3 flex h-6 items-center justify-center">
-              <CharacterMorph
-                texts={[status]}
-                reserveTexts={statusWidthTexts}
-                interval={3000}
-                className="h-6 leading-none text-foreground font-semibold uppercase"
-              />
-            </div>
+          <div className="flex flex-col grow-3 items-center justify-center min-h-0 translate-y-1">
             <button
+              type="button"
               disabled={isDisabled}
-              onClick={() => onValueChange(!isSelected)}
+              onClick={() => void onValueChange(!isSelected)}
               data-guide="home-power-toggle"
-              className="relative group transition-transform active:scale-95 cursor-pointer"
+              aria-label={status}
+              aria-pressed={isSelected}
+              aria-busy={loading}
+              title={status}
+              onMouseEnter={() => setConnectionButtonHovered(true)}
+              onMouseLeave={() => setConnectionButtonHovered(false)}
+              className={`group relative size-[clamp(260px,42vh,340px)] shrink-0 cursor-pointer rounded-full bg-transparent outline-none disabled:cursor-default disabled:opacity-60 disabled:hover:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background ${
+                isSelected
+                  ? 'drop-shadow-[0_0_20px_rgba(50,255,50,0.24)]'
+                  : 'opacity-80 grayscale-[0.18]'
+              }`}
             >
-              <div
-                className={`w-35 h-35 rounded-full flex items-center justify-center transition-all duration-300 bg-radi
-al-[at_30%_45%] backdrop-blur-xl border-2 group-hover:brightness-110 ${
-                  isSelected
-                    ? 'from-gradient-start-power-on/60 to-gradient-end-power-on/60 border-stroke-power-on shadow-[0_0_15px_8px] shadow-stroke-power-on/50 group-hover:shadow-[0_0_25px_10px] group-hover:shadow-stroke-power-on/60'
-                    : 'from-gradient-start-power-off/60 to-gradient-end-power-off/60 border-zinc-400/60 group-hover:shadow-[0_0_15px_8px] group-hover:shadow-zinc-300/40'
-                } ${loading ? 'animate-none' : ''}`}
+              <HomeConnectionGlobe
+                location={currentProxy?.location}
+                connected={isSelected}
+                hovered={connectionButtonHovered && !isDisabled}
+                title={currentProfile?.announce ?? currentProfile?.name}
+              />
+              <span
+                className={`pointer-events-none absolute left-1/2 top-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-background/70 shadow-lg backdrop-blur-md transition-all duration-200 ${
+                  loading ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
+                }`}
               >
-                <div className="relative size-16">
-                  <Spinner
-                    className={`absolute inset-0 m-auto size-16 text-[#FAFAFA] transition-all duration-300 ease-out ${
-                      loading ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-                    }`}
-                  />
-                  <img
-                    src={Pause}
-                    alt=""
-                    className={`absolute inset-0 size-16 fill-foreground transition-all duration-300 ease-out ${
-                      !loading && isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-                    }`}
-                  />
-                  <img
-                    src={Power}
-                    alt=""
-                    className={`absolute inset-0 size-16 fill-foreground transition-all duration-300 ease-out ${
-                      !loading && !isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-                    }`}
-                  />
-                </div>
-                </div>
+                <Spinner className="size-9 text-foreground" />
+              </span>
             </button>
             <div className="mt-3 h-8 flex items-center justify-center">
               <div
@@ -492,145 +530,148 @@ al-[at_30%_45%] backdrop-blur-xl border-2 group-hover:brightness-110 ${
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 -translate-y-4">
-          {/* Server selector */}
-          {firstGroup && (
-            <div className="max-w-xs mx-auto w-full">
-            <Popover open={serverMenuOpen} onOpenChange={setServerMenuOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  data-guide="home-group-selector"
-                  className="group w-full min-w-0 cursor-pointer outline-hidden max-h-16"
-                >
-                  <div className="flex items-center gap-3 rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl p-3 transition-colors hover:bg-card/70">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-gradient-start-power-on/10 text-stroke-power-on">
-                      <Globe className="size-5" />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col text-left">
-                      <span className="text-xs text-muted-foreground leading-tight">
-                        {t('pages.home.server')}
-                      </span>
-                      <span className="flag-emoji truncate text-sm font-medium leading-tight mt-0.5">
-                        {firstGroup.now || firstGroup.name}
-                      </span>
-                    </div>
-                    <span className="shrink-0 flex w-14 items-center justify-center">
-                      {pingTesting ? (
-                        <Spinner className="size-4" />
-                      ) : currentServerDelay > 0 ? (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          title={t('pages.home.pingTest')}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handlePingAll()
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handlePingAll()
-                            }
-                          }}
-                          className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
-                        >
-                          <span
-                            className={`text-xs font-medium tabular-nums ${delayColorClass(currentServerDelay)}`}
-                          >
-                            {currentServerDelay} ms
+          <div className="flex flex-col gap-2 -translate-y-9">
+            {/* Server selector */}
+            {firstGroup && (
+              <div className="mx-auto w-full max-w-[304px]">
+                <Popover open={serverMenuOpen} onOpenChange={setServerMenuOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      data-guide="home-group-selector"
+                      className="group w-full min-w-0 cursor-pointer outline-hidden"
+                    >
+                      <div className="flex h-15 items-center gap-2 rounded-xl border border-stroke bg-card/45 px-3 backdrop-blur-xl transition-all hover:border-stroke-power-on/40 hover:bg-card/75">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-stroke bg-gradient-start-power-on/10 text-stroke-power-on">
+                          <Globe className="size-4.5" />
+                        </div>
+                        <div className="flex min-w-0 flex-1 flex-col text-left">
+                          <span className="text-xs leading-tight text-muted-foreground">
+                            {t('pages.home.server')}
                           </span>
-                        </span>
-                      ) : (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          title={t('pages.home.pingTest')}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handlePingAll()
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handlePingAll()
-                            }
-                          }}
-                          className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
-                        >
-                          <Gauge className="size-4" />
-                        </span>
-                      )}
-                    </span>
-                    <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-                  </div>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                side="top"
-                align="center"
-                sideOffset={6}
-                className="w-(--radix-popover-trigger-width) max-w-xs p-1.5"
-              >
-                <div className="flag-emoji flex flex-col gap-0.5 max-h-64 overflow-y-auto">
-                  {firstGroup.all.map((proxy) => {
-                    const delay = proxyDelay(proxy)
-                    const selected = proxy.name === firstGroup.now
-                    return (
-                      <button
-                        key={proxy.name}
-                        disabled={switchingProxy !== null}
-                        onClick={() => handleChangeProxy(firstGroup.name, proxy.name)}
-                        className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left transition-colors cursor-pointer disabled:cursor-default ${
-                          selected ? 'bg-primary/10' : 'hover:bg-accent/60'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Check
-                            className={`size-4 shrink-0 text-primary ${selected ? 'opacity-100' : 'opacity-0'}`}
-                          />
-                          <span className="text-sm truncate" title={proxy.name}>
-                            {proxy.name}
+                          <span
+                            className="flag-emoji mt-0.5 truncate text-sm font-medium leading-tight"
+                            title={firstGroup.now || firstGroup.name}
+                          >
+                            {firstGroup.now || firstGroup.name}
                           </span>
                         </div>
-                        <span className="shrink-0 inline-flex items-center justify-center w-10">
-                          {switchingProxy === proxy.name ? (
-                            <Spinner className="size-3.5" />
+                        <span className="flex shrink-0 items-center justify-center">
+                          {pingTesting ? (
+                            <Spinner className="size-4" />
+                          ) : currentServerDelay > 0 ? (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              title={t('pages.home.pingTest')}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handlePingAll()
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  handlePingAll()
+                                }
+                              }}
+                              className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+                            >
+                              <span
+                                className={`text-xs font-medium tabular-nums ${delayColorClass(currentServerDelay)}`}
+                              >
+                                {currentServerDelay} ms
+                              </span>
+                            </span>
                           ) : (
                             <span
-                              className={`text-xs font-medium tabular-nums ${delayColorClass(delay)}`}
+                              role="button"
+                              tabIndex={0}
+                              title={t('pages.home.pingTest')}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handlePingAll()
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  handlePingAll()
+                                }
+                              }}
+                              className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
                             >
-                              {delay <= 0 ? '—' : delay}
+                              <Gauge className="size-4" />
                             </span>
                           )}
                         </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-            </div>
-          )}
+                        <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                      </div>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="top"
+                    align="center"
+                    sideOffset={6}
+                    className="w-(--radix-popover-trigger-width) max-w-[304px] p-1.5"
+                  >
+                    <div className="flag-emoji flex flex-col gap-0.5 max-h-64 overflow-y-auto">
+                      {firstGroup.all.map((proxy) => {
+                        const delay = proxyDelay(proxy)
+                        const selected = proxy.name === firstGroup.now
+                        return (
+                          <button
+                            key={proxy.name}
+                            disabled={switchingProxy !== null}
+                            onClick={() => handleChangeProxy(firstGroup.name, proxy.name)}
+                            className={`flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-colors disabled:cursor-default ${
+                              selected ? 'bg-primary/10' : 'hover:bg-accent/60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Check
+                                className={`size-4 shrink-0 text-primary ${selected ? 'opacity-100' : 'opacity-0'}`}
+                              />
+                              <span className="text-sm truncate" title={proxy.name}>
+                                {proxy.name}
+                              </span>
+                            </div>
+                            <span className="shrink-0 inline-flex items-center justify-center w-10">
+                              {switchingProxy === proxy.name ? (
+                                <Spinner className="size-3.5" />
+                              ) : (
+                                <span
+                                  className={`text-xs font-medium tabular-nums ${delayColorClass(delay)}`}
+                                >
+                                  {delay <= 0 ? '—' : delay}
+                                </span>
+                              )}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
 
-          {supportLinkInfo && (
-            <div className="flex justify-center text-sm text-muted-foreground">
-              <button
-                data-guide="home-support-link"
-                type="button"
-                onClick={() => open(supportLinkInfo.href)}
-                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer"
-              >
-                {supportLinkInfo.isTelegram ? (
-                  <SiTelegram className="size-4" />
-                ) : (
-                  <Globe className="size-4" />
-                )}
-                <span>{t('pages.profiles.support')}</span>
-              </button>
-            </div>
-          )}
+            {supportLinkInfo && (
+              <div className="flex justify-center text-sm text-muted-foreground">
+                <button
+                  data-guide="home-support-link"
+                  type="button"
+                  onClick={() => open(supportLinkInfo.href)}
+                  className="inline-flex translate-y-1 items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer"
+                >
+                  {supportLinkInfo.isTelegram ? (
+                    <SiTelegram className="size-4" />
+                  ) : (
+                    <Globe className="size-4" />
+                  )}
+                  <span>{t('pages.profiles.support')}</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -104,6 +104,7 @@
 }
 
 @theme inline {
+  --font-sans: 'Geist', sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -164,7 +165,56 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Geist', sans-serif;
   }
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('../../../main/fonts/Geist-VariableFont_wght.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pixeloid Sans';
+  src: url('../../../main/fonts/PixeloidSans-lxa3y.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pixeloid Sans';
+  src: url('../../../main/fonts/PixeloidSansBold-1jpBg.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RoadRadio';
+  src: url('../../../main/fonts/roadradio_bold.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DotumChePixel-Regular-Variable';
+  src: url('../../../main/fonts/fnt_dotumche.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'AppleColorEmoji';
+  src: url('../../../main/fonts/AppleColorEmoji.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
 }
 
 @font-face {
@@ -259,8 +309,7 @@
   margin-left: 0 !important;
   color: var(--foreground) !important;
   border-color: var(--stroke-power-on) !important;
-  background:
-    linear-gradient(135deg,
+  background: linear-gradient(135deg,
       color-mix(in oklab, var(--gradient-start-power-on) 56%, transparent),
       color-mix(in oklab, var(--gradient-end-power-on) 56%, transparent)) !important;
 }
@@ -313,6 +362,11 @@
 
 .driver-popover-arrow-side-right {
   border-right-color: var(--card) !important;
+}
+
+.app-title {
+  font-family: 'RoadRadio', sans-serif;
+  font-weight: 800;
 }
 
 .app-nodrag {
@@ -570,6 +624,111 @@
   animation: sticky-header-settle 250ms ease-out forwards;
 }
 
+.proxy-globe {
+  font-family: 'DotumChePixel-Regular-Variable', sans-serif;
+}
+
+.proxy-globe-emoji {
+  /* Chromium on Windows does not shape AppleColorEmoji's AAT flag ligatures. */
+  font-family: 'twemoji', 'AppleColorEmoji';
+  font-variant-emoji: emoji;
+}
+
+.proxy-globe-marker-label {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 15%, transparent);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 1px 6px color-mix(in srgb, var(--background) 30%, transparent);
+  transition:
+    opacity 0.2s,
+    filter 0.2s;
+  pointer-events: none;
+  margin-bottom: 10px;
+}
+
+.proxy-globe-marker-pyramid {
+  width: 12px;
+  height: 12px;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: proxy-globe-pyramid-spin 4s linear infinite;
+}
+
+.proxy-globe-marker-pyramid-face {
+  position: absolute;
+  left: -0.5px;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-left: 6.5px solid transparent;
+  border-right: 6.5px solid transparent;
+  border-bottom: 13px solid var(--foreground);
+  transform-origin: center bottom;
+}
+
+.proxy-globe-marker-pyramid-face:nth-child(1) {
+  transform: rotateY(0deg) translateZ(4px) rotateX(19.5deg);
+  border-bottom-color: var(--foreground);
+}
+
+.proxy-globe-marker-pyramid-face:nth-child(2) {
+  transform: rotateY(120deg) translateZ(4px) rotateX(19.5deg);
+  border-bottom-color: color-mix(in srgb, var(--foreground) 72%, transparent);
+}
+
+.proxy-globe-marker-pyramid-face:nth-child(3) {
+  transform: rotateY(240deg) translateZ(4px) rotateX(19.5deg);
+  border-bottom-color: color-mix(in srgb, var(--foreground) 48%, transparent);
+}
+
+.proxy-globe-marker-pyramid-face:nth-child(4) {
+  transform: rotateX(-90deg) rotateZ(60deg) translateY(4px);
+  border-bottom-color: color-mix(in srgb, var(--foreground) 84%, transparent);
+}
+
+@keyframes proxy-globe-pyramid-spin {
+  0% {
+    transform: rotateX(20deg) rotateY(0deg);
+  }
+
+  100% {
+    transform: rotateX(20deg) rotateY(360deg);
+  }
+}
+
+@keyframes home-globe-success-pulse {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.82);
+  }
+
+  70% {
+    opacity: 0.22;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+.home-globe-success-pulse {
+  animation: home-globe-success-pulse 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .proxy-globe-marker-pyramid,
+  .home-globe-success-pulse {
+    animation: none;
+  }
+}
+
 .grid-bg {
   background-image:
     linear-gradient(rgba(120, 120, 130, 0.08) 1px, transparent 1px),
@@ -581,4 +740,109 @@
   background-image:
     linear-gradient(rgba(226, 226, 232, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(226, 226, 232, 0.04) 1px, transparent 1px);
+}
+
+/* ── Orbit ring ────────────────────────── */
+
+.orbit-ring {
+  position: absolute;
+  inset: -2%;
+  pointer-events: none;
+  z-index: 1;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 40%, black 48%, black 100%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 40%, black 48%, black 100%);
+}
+
+.orbit-svg {
+  width: 100%;
+  height: 100%;
+  -webkit-transform: rotateX(62deg);
+  transform: rotateX(62deg);
+  animation: orbit-spin 30s linear infinite, fade-in 1.7s ease .5s both;
+}
+
+.orbit-text {
+  font-family: 'Pixeloid Sans', sans-serif;
+  font-size: 32px;
+
+  fill: rgb(0, 195, 0);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+@-webkit-keyframes orbit-spin {
+  from {
+    -webkit-transform: rotateX(62deg) rotateZ(0deg);
+    transform: rotateX(62deg) rotateZ(0deg);
+  }
+
+  to {
+    -webkit-transform: rotateX(62deg) rotateZ(-360deg);
+    transform: rotateX(62deg) rotateZ(-360deg);
+  }
+}
+
+@keyframes orbit-spin {
+  from {
+    transform: rotateX(62deg) rotateZ(0deg);
+  }
+
+  to {
+    transform: rotateX(62deg) rotateZ(-360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.globe-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  border-radius: 50%;
+  font-family: 'Pixeloid Sans', sans-serif;
+  animation: globe-overlay-enter 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.globe-overlay h1 {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-family: inherit;
+  color: var(--foreground);
+  font-size: clamp(1.25rem, 5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+@keyframes globe-overlay-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .globe-overlay,
+  .globe-overlay .orbit-svg {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }

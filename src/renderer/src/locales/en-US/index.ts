@@ -168,6 +168,8 @@ export default {
       noProfile: 'No active profile',
       unlimited: 'Unlimited',
       never: 'Never',
+      subscription: 'Subscription',
+      profile: 'Profile',
       server: 'Server',
       pingTest: 'Ping all servers'
     },
@@ -204,7 +206,15 @@ export default {
       expandAll: 'Expand all',
       collapseAll: 'Collapse all',
       delayTestAll: 'Delay test all',
-      nodes: 'nodes'
+      nodes: 'nodes',
+      loading: 'Loading locations…',
+      loadFailed: 'Failed to load locations',
+      retry: 'Retry',
+      noLocations: 'No available locations found',
+      unresolvedLocations: 'Could not determine the location for {{count}} nodes',
+      globeLabel: 'Globe of available proxies',
+      closeCountry: 'Close country list',
+      switchFailed: 'Failed to switch proxy'
     },
     connections: {
       title: 'Connections',

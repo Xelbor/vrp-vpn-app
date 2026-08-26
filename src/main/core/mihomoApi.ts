@@ -9,6 +9,7 @@ import { floatingWindow } from '../resolve/floatingWindow'
 import { mihomoIpcPath } from '../utils/dirs'
 import { safeSend } from '../utils/safeSend'
 import { debounce } from '../utils/debounce'
+import { resolveProxyLocation } from './proxyLocation'
 
 let axiosIns: AxiosInstance = null!
 let mihomoTrafficWs: WebSocket | null = null
@@ -124,39 +125,68 @@ export const mihomoGroups = async (): Promise<ControllerMixedGroup[]> => {
   const runtime = await getRuntimeConfig()
 
   const serverDescriptionMap = new Map<string, string>()
-  if (runtime?.proxies) {
-    for (const p of runtime.proxies as { name?: string; serverDescription?: string }[]) {
-      if (p.name && p.serverDescription) {
-        serverDescriptionMap.set(p.name, p.serverDescription)
-      }
+  const runtimeProxyMap = new Map<
+    string,
+    {
+      name?: string
+      server?: string
+      country?: string
+      countryCode?: string
+      serverDescription?: string
     }
+  >()
+  if (runtime?.proxies) {
+    const runtimeProxies = runtime.proxies as unknown as {
+      name?: string
+      server?: string
+      country?: string
+      countryCode?: string
+      serverDescription?: string
+    }[]
+    runtimeProxies.forEach((p) => {
+      if (!p.name) return
+      runtimeProxyMap.set(p.name, p)
+      if (p.serverDescription) serverDescriptionMap.set(p.name, p.serverDescription)
+    })
   }
 
-  const enrichProxy = (
+  const enrichProxy = async (
     proxy: ControllerProxiesDetail | ControllerGroupDetail
-  ): ControllerProxiesDetail | ControllerGroupDetail => {
+  ): Promise<ControllerProxiesDetail | ControllerGroupDetail> => {
     if (!('all' in proxy)) {
-      const desc = serverDescriptionMap.get(proxy.name)
-      if (desc) {
-        proxy.serverDescription = desc
-      }
+      const runtimeProxy = runtimeProxyMap.get(proxy.name)
+      const serverDescription =
+        runtimeProxy?.serverDescription || serverDescriptionMap.get(proxy.name)
+      if (serverDescription) proxy.serverDescription = serverDescription
+      const location = await resolveProxyLocation({
+        ...runtimeProxy,
+        name: proxy.name,
+        serverDescription
+      })
+      if (location) proxy.location = location
     }
     return proxy
   }
 
   const groups: ControllerMixedGroup[] = []
-  runtime?.['proxy-groups']?.forEach((group: { name: string; url?: string }) => {
+  const configuredGroups = (runtime?.['proxy-groups'] || []) as unknown as {
+    name: string
+    url?: string
+  }[]
+  for (const group of configuredGroups) {
     const { name, url } = group
-    if (name === 'GLOBAL') return
+    if (name === 'GLOBAL') continue
     if (proxies.proxies[name] && 'all' in proxies.proxies[name] && !proxies.proxies[name].hidden) {
       const newGroup = proxies.proxies[name]
       newGroup.testUrl = url
-      const newAll = newGroup.all
-        .filter((name) => proxies.proxies[name])
-        .map((name) => enrichProxy(proxies.proxies[name]))
+      const newAll = await Promise.all(
+        newGroup.all
+          .filter((name) => proxies.proxies[name])
+          .map((name) => enrichProxy(proxies.proxies[name]))
+      )
       groups.push({ ...newGroup, all: newAll })
     }
-  })
+  }
   if (mode === 'global') {
     const newGlobal = proxies.proxies['GLOBAL'] as ControllerGroupDetail
     if (newGlobal && !newGlobal.hidden) {
@@ -164,9 +194,11 @@ export const mihomoGroups = async (): Promise<ControllerMixedGroup[]> => {
         runtime?.['proxy-groups'] as { name: string; url?: string }[] | undefined
       )?.find((g) => g.name === 'GLOBAL')
       if (globalConfig?.url) newGlobal.testUrl = globalConfig.url
-      const newAll = newGlobal.all
-        .filter((name) => proxies.proxies[name])
-        .map((name) => enrichProxy(proxies.proxies[name]))
+      const newAll = await Promise.all(
+        newGlobal.all
+          .filter((name) => proxies.proxies[name])
+          .map((name) => enrichProxy(proxies.proxies[name]))
+      )
       groups.unshift({ ...newGlobal, all: newAll })
     }
   }

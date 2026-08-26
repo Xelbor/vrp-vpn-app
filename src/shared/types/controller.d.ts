@@ -129,12 +129,18 @@ interface ControllerProxiesHistory {
   delay: number
 }
 
+interface ControllerProxyLocation {
+  countryCode: string
+  location: [number, number]
+}
+
 interface ControllerProxiesDetail {
   alive: boolean
   extra: Record<string, { alive: boolean; history: ControllerProxiesHistory[] }>
   history: ControllerProxiesHistory[]
   id: string
   name: string
+  location?: ControllerProxyLocation
   tfo: boolean
   type: MihomoProxyType
   udp: boolean
