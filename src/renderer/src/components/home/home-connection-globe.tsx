@@ -429,7 +429,7 @@ export default function HomeConnectionGlobe({
               <defs>
                 <path
                   id={orbitPathId}
-                  d="M 150,150 m -142,0 a 142,142 0 1,0 284,0 a 142,142 0 1,0 -284,0"
+                  d="M 150,150 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0"
                 />
               </defs>
               <text className="orbit-text">

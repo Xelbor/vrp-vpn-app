@@ -12,6 +12,7 @@ import {
   CollapsedIcon,
   ExpandedIcon
 } from '@renderer/components/icons/sidebar-icons'
+import { LayoutGrid } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -23,15 +24,12 @@ import {
   SidebarMenuItem,
   useSidebar
 } from '@renderer/components/ui/sidebar'
-import OutboundModeSwitcher from '@renderer/components/sider/outbound-mode-switcher'
 import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import ConfigViewer from '@renderer/components/sider/config-viewer'
 
 const navItems = [
   { key: 'main', path: '/home', icon: HomeIcon, i18nKey: 'sider.home' },
-  { key: 'profile', path: '/profiles', icon: ProfileIcon, i18nKey: 'sider.profileManagement' },
-  { key: 'proxy', path: '/proxies', icon: ProxiesIcon, i18nKey: 'sider.proxyGroup' },
-  { key: 'connection', path: '/connections', icon: ConnectionsIcon, i18nKey: 'sider.connection' },
+  { key: 'connection', path: '/connections', icon: LayoutGrid, i18nKey: 'sider.connection' },
   { key: 'rule', path: '/rules', icon: RulesIcon, i18nKey: 'sider.rules' },
   { key: 'log', path: '/logs', icon: LogsIcon, i18nKey: 'sider.logs' },
   { key: 'settings', path: '/settings', icon: SettingsIcon, i18nKey: 'common.settings' }
@@ -43,7 +41,7 @@ const AppSidebar: React.FC = () => {
   const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
-  const { toggleSidebar, state } = useSidebar()
+  const { toggleSidebar, setOpen, setOpenMobile, isMobile, state } = useSidebar()
   const collapsed = state === 'collapsed'
   const [showRuntimeConfig, setShowRuntimeConfig] = useState(false)
   const { profileConfig } = useProfileConfig()
@@ -60,7 +58,8 @@ const AppSidebar: React.FC = () => {
       collapsible="icon"
       side="left"
       variant="floating"
-      className="pt-14.25"
+      overlay
+      className="z-30 pt-14.25"
     >
       <SidebarContent>
         <SidebarGroup>
@@ -76,7 +75,14 @@ const AppSidebar: React.FC = () => {
                       tooltip={t(item.i18nKey)}
                       isActive={isActive}
                       data-guide={item.key === 'main' ? 'sidebar-home-button' : undefined}
-                      onClick={() => navigate(item.path)}
+                      onClick={() => {
+                        navigate(item.path)
+                        if (isMobile) {
+                          setOpenMobile(false)
+                        } else {
+                          setOpen(false)
+                        }
+                      }}
                       onDoubleClick={
                         item.key === 'profile' ? () => setShowRuntimeConfig(true) : undefined
                       }
@@ -93,10 +99,14 @@ const AppSidebar: React.FC = () => {
       </SidebarContent>
       <SidebarFooter>
         <div className="flex flex-col items-center gap-2">
-          {hasProfiles && globalModeAllowed && <OutboundModeSwitcher />}
+          {hasProfiles && globalModeAllowed}
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={t('common.toggleSidebar')} onClick={toggleSidebar} className="cursor-pointer">
+              <SidebarMenuButton
+                tooltip={t('common.toggleSidebar')}
+                onClick={toggleSidebar}
+                className="cursor-pointer"
+              >
                 {collapsed ? (
                   <ExpandedIcon className="size-4 shrink-0" />
                 ) : (

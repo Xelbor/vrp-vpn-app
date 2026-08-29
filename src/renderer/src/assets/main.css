@@ -202,24 +202,11 @@
 }
 
 @font-face {
-  font-family: 'DotumChePixel-Regular-Variable';
-  src: url('../../../main/fonts/fnt_dotumche.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'AppleColorEmoji';
-  src: url('../../../main/fonts/AppleColorEmoji.woff2') format('woff2');
+  font-family: 'twemoji';
+  src: url('./twemoji.ttf') format('truetype');
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-}
-
-@font-face {
-  font-family: 'twemoji';
-  src: url('./twemoji.ttf');
 }
 
 .driver-popover {
@@ -625,12 +612,13 @@
 }
 
 .proxy-globe {
-  font-family: 'DotumChePixel-Regular-Variable', sans-serif;
+  font-family: 'Pixeloid Sans', sans-serif;
 }
 
 .proxy-globe-emoji {
-  /* Chromium on Windows does not shape AppleColorEmoji's AAT flag ligatures. */
-  font-family: 'twemoji', 'AppleColorEmoji';
+  /* Chromium on Windows does not shape Apple Color Emoji's AAT flag ligatures,
+     so twemoji leads; the rest are system fonts and cost nothing to load. */
+  font-family: 'twemoji', 'Apple Color Emoji', 'Segoe UI Emoji';
   font-variant-emoji: emoji;
 }
 
@@ -845,4 +833,9 @@
     opacity: 1;
     transform: none;
   }
+}
+
+.timer {
+  font-family: 'Pixeloid Sans', sans-serif;
+  font-size: 14px;
 }

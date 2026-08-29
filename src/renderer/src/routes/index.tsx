@@ -1,65 +1,69 @@
+import React, { lazy, Suspense } from 'react'
 import { Navigate } from 'react-router-dom'
-import Proxies from '@renderer/pages/proxies'
-import Rules from '@renderer/pages/rules'
-import Settings from '@renderer/pages/settings'
-import Profiles from '@renderer/pages/profiles'
-import Logs from '@renderer/pages/logs'
-import Connections from '@renderer/pages/connections'
-import Mihomo from '@renderer/pages/mihomo'
-import Sysproxy from '@renderer/pages/syspeoxy'
-import Tun from '@renderer/pages/tun'
-import Resources from '@renderer/pages/resources'
-import DNS from '@renderer/pages/dns'
-import Sniffer from '@renderer/pages/sniffer'
 import Home from '@renderer/pages/home'
+
+// Home is the landing route, so it stays in the entry chunk. Every other page is
+// split out: statically importing all of them pulled the whole app graph in
+// before first paint.
+const lazyPage = (
+  loader: () => Promise<{ default: React.ComponentType }>
+): React.ReactElement => {
+  const Page = lazy(loader)
+  return (
+    <Suspense fallback={null}>
+      <Page />
+    </Suspense>
+  )
+}
+
 const routes = [
   {
     path: '/mihomo',
-    element: <Mihomo />
+    element: lazyPage(() => import('@renderer/pages/mihomo'))
   },
   {
     path: '/sysproxy',
-    element: <Sysproxy />
+    element: lazyPage(() => import('@renderer/pages/syspeoxy'))
   },
   {
     path: '/tun',
-    element: <Tun />
+    element: lazyPage(() => import('@renderer/pages/tun'))
   },
   {
     path: '/proxies',
-    element: <Proxies />
+    element: lazyPage(() => import('@renderer/pages/proxies'))
   },
   {
     path: '/rules',
-    element: <Rules />
+    element: lazyPage(() => import('@renderer/pages/rules'))
   },
   {
     path: '/resources',
-    element: <Resources />
+    element: lazyPage(() => import('@renderer/pages/resources'))
   },
   {
     path: '/dns',
-    element: <DNS />
+    element: lazyPage(() => import('@renderer/pages/dns'))
   },
   {
     path: '/sniffer',
-    element: <Sniffer />
+    element: lazyPage(() => import('@renderer/pages/sniffer'))
   },
   {
     path: '/logs',
-    element: <Logs />
+    element: lazyPage(() => import('@renderer/pages/logs'))
   },
   {
     path: '/connections',
-    element: <Connections />
+    element: lazyPage(() => import('@renderer/pages/connections'))
   },
   {
     path: '/profiles',
-    element: <Profiles />
+    element: lazyPage(() => import('@renderer/pages/profiles'))
   },
   {
     path: '/settings',
-    element: <Settings />
+    element: lazyPage(() => import('@renderer/pages/settings'))
   },
   {
     path: '/',

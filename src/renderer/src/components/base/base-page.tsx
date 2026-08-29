@@ -1,3 +1,4 @@
+import { cn } from '@renderer/lib/utils'
 import { Button } from '@renderer/components/ui/button'
 import { platform } from '@renderer/utils/init'
 import WindowControls from '@renderer/components/window-controls'
@@ -30,7 +31,7 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
     <div ref={contentRef} className="w-full h-full">
       <div className="sticky top-0 z-40 h-14.25 w-full">
         <div className="app-drag px-2 pt-3 pb-2 flex justify-between h-14.25">
-          <div className="title h-full text-lg leading-8 flex items-center gap-1">
+          <div className="title h-full text-lg leading-8 flex items-center gap-1 ml-15">
             {(isSubPage || props.showBackButton) && (
               <Button
                 size="icon-sm"
@@ -49,7 +50,12 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
           </div>
         </div>
       </div>
-      <div className="content h-[calc(100vh-57px)] overflow-y-auto custom-scrollbar">
+      <div
+        className={cn(
+          'content h-[calc(100vh-57px)] overflow-y-auto custom-scrollbar md:pl-[calc(var(--sidebar-width-icon)+(--spacing(4)))]',
+          props.contentClassName
+        )}
+      >
         {props.children}
       </div>
     </div>

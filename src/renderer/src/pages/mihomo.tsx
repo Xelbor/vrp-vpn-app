@@ -68,8 +68,6 @@ const getSystemCorePaths = async (): Promise<string[]> => {
   return cachePromise
 }
 
-getSystemCorePaths().catch(() => {})
-
 const Mihomo: React.FC = () => {
   const { t } = useTranslation()
   const { appConfig, patchAppConfig } = useAppConfig()
