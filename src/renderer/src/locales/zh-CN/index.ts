@@ -107,9 +107,9 @@ export default {
     profileAnnounceTitle: '订阅公告',
     profileAnnounceDesc: '这里会显示服务提供方发布的公告信息。',
     powerButtonTitle: '连接开关',
-    powerButtonDesc: '点击连接按钮开启代理连接。',
-    groupSelectorTitle: '代理组选择器',
-    groupSelectorDesc: '点击首页选择器，进入代理组页面。',
+    powerButtonDesc: '使用此按钮连接或断开 VPN。',
+    groupSelectorTitle: '服务器选择器',
+    groupSelectorDesc: '此选择器会直接在首页打开当前代理组中的可用服务器列表。',
     firstGroupTitle: '第一个代理组',
     firstGroupDesc: '请先点击第一个代理组，将节点列表展开。',
     firstGroupExpandedTitle: '代理组完整内容',
@@ -246,7 +246,13 @@ export default {
       subscription: '订阅',
       profile: '配置',
       server: '节点',
-      pingTest: '测试所有节点延迟'
+      pingTest: '测试所有节点延迟',
+      subscriptionExpiring_other: '订阅将在 {{count}} 天后到期',
+      subscriptionExpiringToday: '订阅将于今天到期',
+      subscriptionExpired: '订阅已到期',
+      subscriptionExpiringHint: '请在 {{date}} 前续费，以免中断使用',
+      subscriptionExpiredHint: '请续费以恢复访问',
+      renewSubscription: '立即续费'
     },
     settings: {
       title: '应用设置',
@@ -315,7 +321,17 @@ export default {
       vpnEnabled: 'VPN',
       vpnDisabled: '直连',
       vpnToggleHint: '为此应用切换 VPN',
-      vpnApplying: '应用中…'
+      vpnApplying: '应用中…',
+      emptyActiveTitle: '暂无活动连接',
+      emptyActiveDescription: '当前没有流量经过代理。应用开始联网后，新连接会显示在这里。',
+      emptyClosedTitle: '暂无已关闭连接',
+      emptyClosedDescription: '已结束或被关闭的连接会保留在这里。',
+      emptyProcessesTitle: '暂无连接',
+      emptyProcessesDescription: '经过代理的应用会按进程分组显示在这里。',
+      emptyFilterTitle: '没有匹配的结果',
+      emptyFilterDescription: '换个关键词，或清除筛选条件查看全部内容。',
+      clearFilter: '清除筛选',
+      showClosed: '显示已关闭'
     },
     logs: {
       title: '实时日志',

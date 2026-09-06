@@ -13,16 +13,17 @@ import {
   triggerSysProxy,
   updateTrayIcon
 } from '@renderer/utils/ipc'
-import NumberFlow from '@number-flow/react'
 import { useTranslation } from 'react-i18next'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import HomeConnectionGlobe from '@renderer/components/home/home-connection-globe'
 import {
   ArrowDown,
   ArrowUp,
+  CalendarClock,
   Check,
   ChevronsUpDown,
+  CreditCard,
   FileDown,
   Gauge,
   Globe,
@@ -72,8 +73,44 @@ function delayColorClass(delay: number): string {
   return 'text-warning'
 }
 
-// Module-level variable: persists across component mounts/unmounts
+const EXPIRY_WARNING_DAYS = 3
+
+// Persists across route changes while the app remains connected.
 let connectionStartTime: number | null = null
+
+const ConnectedTimer = memo(({ active }: { active: boolean }) => {
+  const [elapsed, setElapsed] = useState(() => {
+    if (active && connectionStartTime !== null) {
+      return Math.floor((Date.now() - connectionStartTime) / 1000)
+    }
+    return 0
+  })
+
+  useEffect(() => {
+    if (!active) {
+      connectionStartTime = null
+      setElapsed(0)
+      return undefined
+    }
+    if (connectionStartTime === null) {
+      connectionStartTime = Date.now()
+    }
+    const updateElapsed = (): void => {
+      setElapsed(Math.floor((Date.now() - connectionStartTime!) / 1000))
+    }
+    updateElapsed()
+    const interval = setInterval(updateElapsed, 1000)
+    return () => clearInterval(interval)
+  }, [active])
+
+  const hours = Math.floor(elapsed / 3600).toString().padStart(2, '0')
+  const minutes = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0')
+  const seconds = (elapsed % 60).toString().padStart(2, '0')
+
+  return <span>{hours}:{minutes}:{seconds}</span>
+})
+
+ConnectedTimer.displayName = 'ConnectedTimer'
 
 const Home: React.FC = () => {
   const { t } = useTranslation()
@@ -235,31 +272,7 @@ const Home: React.FC = () => {
     'connecting'
   )
 
-  const [elapsed, setElapsed] = useState(() => {
-    if (connectionStartTime !== null) {
-      return Math.floor((Date.now() - connectionStartTime) / 1000)
-    }
-    return 0
-  })
-
   const isSelected = (tun?.enable ?? false) || proxyMode
-
-  useEffect(() => {
-    if (isSelected) {
-      if (connectionStartTime === null) {
-        connectionStartTime = Date.now()
-      }
-      setElapsed(Math.floor((Date.now() - connectionStartTime) / 1000))
-      const interval = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - connectionStartTime!) / 1000))
-      }, 1000)
-      return () => clearInterval(interval)
-    } else {
-      connectionStartTime = null
-      setElapsed(0)
-      return undefined
-    }
-  }, [isSelected])
 
   const isDisabled =
     loading ||
@@ -273,9 +286,6 @@ const Home: React.FC = () => {
       ? t('pages.home.connected')
       : t('pages.home.disconnected')
   const showConnectedTimer = !loading && isSelected
-  const elapsedHours = Math.floor(elapsed / 3600)
-  const elapsedMinutes = Math.floor((elapsed % 3600) / 60)
-  const elapsedSeconds = elapsed % 60
 
   // Current profile & subscription
   const currentProfile = useMemo(() => {
@@ -300,10 +310,32 @@ const Home: React.FC = () => {
   const trafficTotal = subscription?.total ?? 0
   const trafficRemaining = trafficTotal > 0 ? trafficTotal - trafficUsed : 0
   const expireTimestamp = subscription?.expire ?? 0
-  const expireDate =
-    expireTimestamp > 0 ? dayjs.unix(expireTimestamp).format('L') : t('pages.home.never')
-  const daysRemaining =
-    expireTimestamp > 0 ? Math.max(0, dayjs.unix(expireTimestamp).diff(dayjs(), 'day')) : 0
+  const hasExpiry = Number.isFinite(expireTimestamp) && expireTimestamp > 0
+  const [expiryTick, setExpiryTick] = useState(0)
+
+  useEffect(() => {
+    if (!hasExpiry) return undefined
+    const interval = setInterval(() => setExpiryTick((value) => value + 1), 60_000)
+    return () => clearInterval(interval)
+  }, [hasExpiry, expireTimestamp])
+
+  const { expireDate, daysRemaining, isExpired } = useMemo(() => {
+    if (!hasExpiry) {
+      return {
+        expireDate: t('pages.home.never'),
+        daysRemaining: 0,
+        isExpired: false
+      }
+    }
+    const now = dayjs()
+    const expiresAt = dayjs.unix(expireTimestamp)
+    return {
+      expireDate: expiresAt.format('L'),
+      daysRemaining: Math.max(0, expiresAt.diff(now, 'day')),
+      isExpired: expiresAt.isBefore(now)
+    }
+  }, [expireTimestamp, expiryTick, hasExpiry, t])
+  const showExpiryNotice = hasExpiry && daysRemaining <= EXPIRY_WARNING_DAYS
 
   const firstGroup = groups?.[0]
   const currentProxy = useMemo(() => {
@@ -320,7 +352,9 @@ const Home: React.FC = () => {
     if (!firstGroup || !firstGroup.now || pingTesting) return
     setPingTesting(true)
     try {
-      await mihomoProxyDelay(firstGroup.now, firstGroup.testUrl)
+      const proxy = firstGroup.all.find((item) => item.name === firstGroup.now)
+      const provider = proxy && 'provider-name' in proxy ? proxy['provider-name'] : undefined
+      await mihomoProxyDelay(firstGroup.now, firstGroup.testUrl, provider)
       mutateGroups()
     } catch {
       // ignore node failure
@@ -394,6 +428,7 @@ const Home: React.FC = () => {
     if (!supportUrl) return null
     try {
       const parsed = new URL(supportUrl)
+      if (!['http:', 'https:', 'tg:'].includes(parsed.protocol)) return null
       const normalized = `${parsed.hostname}${parsed.pathname}`.toLowerCase()
       return {
         href: parsed.toString(),
@@ -406,6 +441,31 @@ const Home: React.FC = () => {
       return null
     }
   }, [supportUrl])
+
+  const renewAction = useMemo(() => {
+    if (currentProfile?.home && currentProfile.homeName?.trim()) {
+      try {
+        const parsed = new URL(currentProfile.home)
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+          return { href: parsed.toString(), label: currentProfile.homeName.trim() }
+        }
+      } catch {
+        // Fall through to the support URL.
+      }
+    }
+    return supportLinkInfo
+      ? { href: supportLinkInfo.href, label: t('pages.home.renewSubscription') }
+      : null
+  }, [currentProfile?.home, currentProfile?.homeName, supportLinkInfo, t])
+
+  const expiryTitle = isExpired
+    ? t('pages.home.subscriptionExpired')
+    : daysRemaining === 0
+      ? t('pages.home.subscriptionExpiringToday')
+      : t('pages.home.subscriptionExpiring', { count: daysRemaining })
+  const expiryHint = isExpired
+    ? t('pages.home.subscriptionExpiredHint')
+    : t('pages.home.subscriptionExpiringHint', { date: expireDate })
 
   const onValueChange = async (enable: boolean): Promise<void> => {
     setLoading(true)
@@ -480,7 +540,10 @@ const Home: React.FC = () => {
         </div>
       )}
       {!hasProfiles ? (
-        <div className="h-full w-full flex items-center justify-center">
+        <div
+          data-guide={profileConfig !== undefined ? 'home-profile-state-ready' : undefined}
+          className="h-full w-full flex items-center justify-center"
+        >
           <div className="flex flex-col items-center gap-4 max-w-75 rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl p-8">
             <WifiOff className="size-16 text-muted-foreground" />
             <h2 className="text-xl font-bold text-foreground">{t('pages.profiles.emptyTitle')}</h2>
@@ -498,7 +561,10 @@ const Home: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col h-full px-2 pb-2 gap-2 sm:gap-3">
+        <div
+          data-guide="home-profile-state-ready"
+          className="flex flex-col h-full px-2 pb-2 gap-2 sm:gap-3"
+        >
           {/* Profile card */}
           {currentProfile && (
             <div className="w-full max-w-lg self-center rounded-2xl border border-stroke bg-card/45 p-2 backdrop-blur-xl sm:p-3">
@@ -613,34 +679,64 @@ const Home: React.FC = () => {
               {subscription && (
                 <>
                   <Separator className="my-1 sm:my-2" />
-                  <div className="grid min-w-0 grid-cols-1 divide-y divide-stroke sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-                    <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
-                      <span className="text-xs text-muted-foreground">
-                        {t('pages.home.trafficRemaining')}
-                      </span>
-                      <span className="text-sm font-bold tabular-nums">
-                        {trafficTotal > 0 ? (
-                          formatBytes(Math.max(0, trafficRemaining))
-                        ) : (
-                          <InfinityIcon className="size-4" />
+                  {showExpiryNotice ? (
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="flex min-w-0 items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
+                    >
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/15 text-destructive">
+                        <CalendarClock aria-hidden="true" className="size-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-semibold leading-snug text-destructive">
+                          {expiryTitle}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground text-balance">
+                          {expiryHint}
+                        </p>
+                        {renewAction && (
+                          <button
+                            type="button"
+                            onClick={() => open(renewAction.href)}
+                            className="mt-3 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-stroke-power-on bg-gradient-start-power-on/50 px-4 text-sm font-semibold text-foreground transition-colors hover:bg-gradient-start-power-on/40 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <CreditCard aria-hidden="true" className="size-4" />
+                            <span className="truncate">{renewAction.label}</span>
+                          </button>
                         )}
-                      </span>
+                      </div>
                     </div>
-                    <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
-                      <span className="text-xs text-muted-foreground">
-                        {t('pages.home.daysRemaining')}
-                      </span>
-                      <span className="text-sm font-bold tabular-nums">
-                        {expireTimestamp > 0 ? daysRemaining : <InfinityIcon className="size-4" />}
-                      </span>
+                  ) : (
+                    <div className="grid min-w-0 grid-cols-1 divide-y divide-stroke sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                      <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
+                        <span className="text-xs text-muted-foreground">
+                          {t('pages.home.trafficRemaining')}
+                        </span>
+                        <span className="text-sm font-bold tabular-nums">
+                          {trafficTotal > 0 ? (
+                            formatBytes(Math.max(0, trafficRemaining))
+                          ) : (
+                            <InfinityIcon className="size-4" />
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
+                        <span className="text-xs text-muted-foreground">
+                          {t('pages.home.daysRemaining')}
+                        </span>
+                        <span className="text-sm font-bold tabular-nums">
+                          {hasExpiry ? daysRemaining : <InfinityIcon className="size-4" />}
+                        </span>
+                      </div>
+                      <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
+                        <span className="text-xs text-muted-foreground">
+                          {t('pages.home.expires')}
+                        </span>
+                        <span className="text-sm font-bold tabular-nums">{expireDate}</span>
+                      </div>
                     </div>
-                    <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
-                      <span className="text-xs text-muted-foreground">
-                        {t('pages.home.expires')}
-                      </span>
-                      <span className="text-sm font-bold tabular-nums">{expireDate}</span>
-                    </div>
-                  </div>
+                  )}
                 </>
               )}
             </div>
@@ -686,20 +782,7 @@ const Home: React.FC = () => {
                   showConnectedTimer ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
                 }`}
               >
-                <NumberFlow
-                  value={elapsedHours}
-                  format={{ minimumIntegerDigits: 2, useGrouping: false }}
-                />
-                <span>:</span>
-                <NumberFlow
-                  value={elapsedMinutes}
-                  format={{ minimumIntegerDigits: 2, useGrouping: false }}
-                />
-                <span>:</span>
-                <NumberFlow
-                  value={elapsedSeconds}
-                  format={{ minimumIntegerDigits: 2, useGrouping: false }}
-                />
+                <ConnectedTimer active={isSelected} />
               </div>
             </div>
             <div

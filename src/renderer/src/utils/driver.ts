@@ -47,6 +47,11 @@ type DriverConfig = {
   progressText?: string
   overlayOpacity?: number
   steps: DriveStep[]
+  onHighlightStarted?: (
+    element: Element | undefined,
+    step: DriveStep,
+    options: DriverStepOptions
+  ) => void
   onDestroyed?: () => void
   onCloseClick?: (element: Element | undefined, step: DriveStep, options: DriverStepOptions) => void
   onPopoverRender?: (popover: PopoverDOM, options: { config: DriverConfig; state: unknown; driver: Driver }) => void
@@ -56,7 +61,8 @@ type Driver = {
   drive: (stepIndex?: number) => void
   destroy: () => void
   moveNext: () => void
-  refresh?: () => void
+  movePrevious: () => void
+  getActiveIndex: () => number | undefined
 }
 
 type DriverFactory = (config: DriverConfig) => Driver
@@ -69,14 +75,13 @@ type StartTourOptions = {
   onMainGuideCompleted?: () => void
 }
 
-type AutoClickStepOptions = {
+type OptionalInfoStepOptions = {
   element: string | (() => Element | null)
   title: string
   description: string
   side?: 'top' | 'right' | 'bottom' | 'left' | 'over'
   align?: 'start' | 'center' | 'end'
-  waitFor?: string | string[]
-  afterClick?: () => Promise<void> | void
+  isAvailable?: (element: Element) => boolean
 }
 
 type AutoAdvanceStepOptions = {
@@ -102,8 +107,11 @@ let F11Count = 0
 let f11ResetTimeout: number | null = null
 let removeTourExitHotkeyListener: (() => void) | null = null
 let isStartingTour = false
+let guideNavigationDirection: 'forward' | 'backward' = 'forward'
+let previousGuideStepIndex: number | undefined
 
 const GUIDE_SELECTORS = {
+  homeReady: '[data-guide="home-profile-state-ready"]',
   addProfileButton: '[data-guide="home-add-profile-btn"]',
   profileImportUrlInput: '[data-guide="profile-import-url-input"]',
   profileImportPasteButton: '[data-guide="profile-import-paste-btn"]',
@@ -115,17 +123,11 @@ const GUIDE_SELECTORS = {
   powerButton: '[data-guide="home-power-toggle"]',
   groupSelector: '[data-guide="home-group-selector"]',
   supportButton: '[data-guide="home-support-link"]',
-  firstProxyGroup: '[data-guide="proxies-first-group"]',
-  firstProxyGroupRows: '[data-guide="proxies-first-group-row"]',
-  sidebar: '[data-guide="app-sidebar"]',
-  sidebarHomeButton: '[data-guide="sidebar-home-button"]'
+  sidebar: '[data-guide="app-sidebar"]'
 } as const
 
-const WAIT_TIMEOUT_MS = 45_000
+const WAIT_TIMEOUT_MS = 15_000
 const WAIT_INTERVAL_MS = 120
-const FIRST_PROXY_GROUP_OVERLAY_ID = 'guide-first-group-overlay'
-
-type CancelSignal = { aborted: boolean }
 
 function clearGuideModeObserver(): void {
   stopGuideModeObserver?.()
@@ -188,24 +190,14 @@ function resolveElement(selector: string): Element | null {
   return document.querySelector(selector)
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
 function waitForAnyElement(
   selectors: readonly string[],
-  timeoutMs = WAIT_TIMEOUT_MS,
-  signal?: CancelSignal
+  timeoutMs = WAIT_TIMEOUT_MS
 ): Promise<Element> {
   return new Promise((resolve, reject) => {
     const startTime = Date.now()
 
     const check = (): void => {
-      if (signal?.aborted) {
-        reject(new Error('Aborted'))
-        return
-      }
-
       const element = selectors.map(resolveElement).find(Boolean)
       if (element) {
         resolve(element)
@@ -224,14 +216,6 @@ function waitForAnyElement(
   })
 }
 
-function waitForElement(
-  selector: string,
-  timeoutMs = WAIT_TIMEOUT_MS,
-  signal?: CancelSignal
-): Promise<Element> {
-  return waitForAnyElement([selector], timeoutMs, signal)
-}
-
 function isValidHttpUrl(value: string): boolean {
   if (!value) return false
   try {
@@ -242,122 +226,49 @@ function isValidHttpUrl(value: string): boolean {
   }
 }
 
-function removeFirstProxyGroupOverlay(): void {
-  document.getElementById(FIRST_PROXY_GROUP_OVERLAY_ID)?.remove()
-}
-
-function getFirstProxyGroupHighlightElement(): Element | null {
-  const firstGroupHeader = resolveElement(GUIDE_SELECTORS.firstProxyGroup)
-  if (!firstGroupHeader) return null
-
-  const headerRect = firstGroupHeader.getBoundingClientRect()
-  const rowRects = Array.from(document.querySelectorAll(GUIDE_SELECTORS.firstProxyGroupRows))
-    .map((element) => element.getBoundingClientRect())
-    .filter((rect) => rect.width > 0 && rect.height > 0)
-
-  const allRects = [headerRect, ...rowRects].filter((rect) => rect.width > 0 && rect.height > 0)
-  if (allRects.length === 0) return firstGroupHeader
-
-  const margin = 8
-  const top = Math.max(0, Math.min(...allRects.map((rect) => rect.top)) - margin)
-  const left = Math.max(0, Math.min(...allRects.map((rect) => rect.left)) - margin)
-  const right = Math.min(
-    window.innerWidth,
-    Math.max(...allRects.map((rect) => rect.right)) + margin
-  )
-  const bottom = Math.min(
-    window.innerHeight,
-    Math.max(...allRects.map((rect) => rect.bottom)) + margin
-  )
-
-  let overlay = document.getElementById(FIRST_PROXY_GROUP_OVERLAY_ID) as HTMLDivElement | null
-  if (!overlay) {
-    overlay = document.createElement('div')
-    overlay.id = FIRST_PROXY_GROUP_OVERLAY_ID
-    overlay.style.position = 'fixed'
-    overlay.style.pointerEvents = 'none'
-    overlay.style.background = 'transparent'
-    overlay.style.borderRadius = '16px'
-    overlay.style.zIndex = '2147483640'
-    document.body.appendChild(overlay)
-  }
-
-  overlay.style.top = `${top}px`
-  overlay.style.left = `${left}px`
-  overlay.style.width = `${Math.max(0, right - left)}px`
-  overlay.style.height = `${Math.max(0, bottom - top)}px`
-
-  return overlay
-}
-
-function createAutoClickStep({
+function createOptionalInfoStep({
   element,
   title,
   description,
   side = 'bottom',
   align = 'center',
-  waitFor,
-  afterClick
-}: AutoClickStepOptions): DriveStep {
-  let detachClickListener: (() => void) | null = null
-  let isWaiting = false
-  let cancelSignal: CancelSignal | null = null
+  isAvailable = () => true
+}: OptionalInfoStepOptions): DriveStep {
+  let pendingSkipTimeout: number | null = null
 
-  const waitForTarget = async (signal: CancelSignal): Promise<void> => {
-    if (waitFor) {
-      if (Array.isArray(waitFor)) {
-        await waitForAnyElement(waitFor, WAIT_TIMEOUT_MS, signal)
-      } else {
-        await waitForElement(waitFor, WAIT_TIMEOUT_MS, signal)
-      }
-    }
+  const resolveTarget = (): Element | null => {
+    const target = typeof element === 'string' ? resolveElement(element) : element()
+    return target && isAvailable(target) ? target : null
+  }
 
-    if (!signal.aborted) {
-      await afterClick?.()
-    }
+  const clearPendingSkip = (): void => {
+    if (pendingSkipTimeout === null) return
+    window.clearTimeout(pendingSkipTimeout)
+    pendingSkipTimeout = null
   }
 
   return {
-    element,
+    element: resolveTarget,
     popover: {
       title,
       description,
       side,
-      align,
-      showButtons: ['previous']
+      align
     },
     onHighlighted: (highlightedElement, _step, options): void => {
-      detachClickListener?.()
-      isWaiting = false
-      if (cancelSignal) cancelSignal.aborted = true
-      const signal: CancelSignal = { aborted: false }
-      cancelSignal = signal
+      clearPendingSkip()
+      if (highlightedElement) return
 
-      if (!highlightedElement) return
-
-      const onClick = async (): Promise<void> => {
-        if (isWaiting || signal.aborted) return
-        isWaiting = true
-
-        try {
-          await waitForTarget(signal)
-          if (!signal.aborted) options.driver.moveNext()
-        } catch {
-          isWaiting = false
+      pendingSkipTimeout = window.setTimeout(() => {
+        pendingSkipTimeout = null
+        if (guideNavigationDirection === 'backward') {
+          options.driver.movePrevious()
+        } else {
+          options.driver.moveNext()
         }
-      }
-
-      highlightedElement.addEventListener('click', onClick)
-      detachClickListener = (): void => {
-        highlightedElement.removeEventListener('click', onClick)
-      }
+      }, 0)
     },
-    onDeselected: (): void => {
-      detachClickListener?.()
-      detachClickListener = null
-      isWaiting = false
-      if (cancelSignal) cancelSignal.aborted = true
-    }
+    onDeselected: clearPendingSkip
   }
 }
 
@@ -554,97 +465,48 @@ function buildGuideSteps(mode: GuideMode = 'default'): DriveStep[] {
   }
 
   steps.push(
-    {
-      element: () =>
-        resolveElement(GUIDE_SELECTORS.profileHeader) ??
-        resolveElement(GUIDE_SELECTORS.powerButton),
-      popover: {
-        title: t('guide.profileHeaderTitle'),
-        description: t('guide.profileHeaderDesc'),
-        side: 'bottom'
-      }
-    },
-    {
-      element: () =>
-        resolveElement(GUIDE_SELECTORS.profileAnnounce) ??
-        resolveElement(GUIDE_SELECTORS.profileHeader) ??
-        resolveElement(GUIDE_SELECTORS.powerButton),
-      popover: {
-        title: t('guide.profileAnnounceTitle'),
-        description: t('guide.profileAnnounceDesc'),
-        side: 'bottom'
-      }
-    },
-    createAutoClickStep({
+    createOptionalInfoStep({
+      element: GUIDE_SELECTORS.profileHeader,
+      title: t('guide.profileHeaderTitle'),
+      description: t('guide.profileHeaderDesc'),
+      side: 'bottom'
+    }),
+    createOptionalInfoStep({
+      element: GUIDE_SELECTORS.profileAnnounce,
+      title: t('guide.profileAnnounceTitle'),
+      description: t('guide.profileAnnounceDesc'),
+      side: 'bottom'
+    }),
+    createOptionalInfoStep({
       element: GUIDE_SELECTORS.powerButton,
       title: t('guide.powerButtonTitle'),
       description: t('guide.powerButtonDesc'),
       side: 'top',
-      waitFor: GUIDE_SELECTORS.groupSelector,
-      afterClick: () => sleep(500)
+      isAvailable: (element) =>
+        element instanceof HTMLButtonElement && !element.disabled
     }),
-    createAutoClickStep({
+    createOptionalInfoStep({
       element: GUIDE_SELECTORS.groupSelector,
       title: t('guide.groupSelectorTitle'),
       description: t('guide.groupSelectorDesc'),
-      side: 'top',
-      waitFor: GUIDE_SELECTORS.firstProxyGroup
+      side: 'top'
     }),
-    createAutoAdvanceStep({
-      element: GUIDE_SELECTORS.firstProxyGroup,
-      title: t('guide.firstGroupTitle'),
-      description: t('guide.firstGroupDesc'),
-      side: 'bottom',
-      align: 'start',
-      isCompleted: () => {
-        const firstGroup = resolveElement(GUIDE_SELECTORS.firstProxyGroup)
-        return firstGroup?.getAttribute('data-guide-open') === 'true'
-      },
-      nextDelayMs: 140
-    }),
-    {
+    createOptionalInfoStep({
       element: () =>
-        getFirstProxyGroupHighlightElement() ?? resolveElement(GUIDE_SELECTORS.firstProxyGroup),
-      popover: {
-        title: t('guide.firstGroupExpandedTitle'),
-        description: t('guide.firstGroupExpandedDesc'),
-        side: 'bottom',
-        align: 'start'
-      },
-      onHighlighted: (_element, _step, options): void => {
-        window.setTimeout(() => {
-          getFirstProxyGroupHighlightElement()
-          options.driver.refresh?.()
-        }, 60)
-      },
-      onDeselected: (): void => {
-        removeFirstProxyGroupOverlay()
-      }
-    },
-    {
-      element: GUIDE_SELECTORS.sidebar,
-      popover: {
-        title: t('guide.sidebarTitle'),
-        description: t('guide.sidebarDesc'),
-        side: 'right'
-      }
-    },
-    createAutoClickStep({
-      element: GUIDE_SELECTORS.sidebarHomeButton,
-      title: t('guide.sidebarHomeTitle'),
-      description: t('guide.sidebarHomeDesc'),
-      side: 'right',
-      waitFor: [GUIDE_SELECTORS.powerButton, GUIDE_SELECTORS.addProfileButton]
+        window.matchMedia('(min-width: 768px)').matches
+          ? resolveElement(GUIDE_SELECTORS.sidebar)
+          : null,
+      title: t('guide.sidebarTitle'),
+      description: t('guide.sidebarDesc'),
+      side: 'right'
     }),
-    {
+    createOptionalInfoStep({
       element: GUIDE_SELECTORS.supportButton,
-      popover: {
-        title: t('guide.supportTitle'),
-        description: t('guide.supportDesc'),
-        side: 'top',
-        align: 'center'
-      }
-    },
+      title: t('guide.supportTitle'),
+      description: t('guide.supportDesc'),
+      side: 'top',
+      align: 'center'
+    }),
     {
       popover: {
         title: t('guide.tutorialEnd'),
@@ -662,6 +524,14 @@ function buildGuideSteps(mode: GuideMode = 'default'): DriveStep[] {
   return steps
 }
 
+function resolveGuideMode(mode: GuideMode): GuideMode {
+  if (resolveElement(GUIDE_SELECTORS.adminRequiredModal)) return 'admin-required'
+  if (mode === 'default' && resolveElement(GUIDE_SELECTORS.profileInstallConfirmModal)) {
+    return 'deep-link'
+  }
+  return mode
+}
+
 async function createDriverWithMode(mode: GuideMode): Promise<Driver> {
   if (driverInstance) {
     driverInstance.destroy()
@@ -669,8 +539,11 @@ async function createDriverWithMode(mode: GuideMode): Promise<Driver> {
   }
 
   const { driver } = await loadDriverModule()
+  const resolvedMode = resolveGuideMode(mode)
 
-  guideMode = mode
+  guideMode = resolvedMode
+  guideNavigationDirection = 'forward'
+  previousGuideStepIndex = undefined
   driverInstance = driver({
     allowClose: false,
     showProgress: true,
@@ -680,7 +553,17 @@ async function createDriverWithMode(mode: GuideMode): Promise<Driver> {
     doneBtnText: t('guide.done'),
     progressText: '{{current}} / {{total}}',
     overlayOpacity: 0.9,
-    steps: buildGuideSteps(mode),
+    steps: buildGuideSteps(resolvedMode),
+    onHighlightStarted: (_element, _step, options): void => {
+      const activeIndex = options.driver.getActiveIndex()
+      if (activeIndex === undefined) return
+
+      if (previousGuideStepIndex !== undefined) {
+        guideNavigationDirection =
+          activeIndex < previousGuideStepIndex ? 'backward' : 'forward'
+      }
+      previousGuideStepIndex = activeIndex
+    },
     onCloseClick: (_element, _step, options): void => {
       markMainGuideCompleted()
       options.driver.destroy()
@@ -692,7 +575,6 @@ async function createDriverWithMode(mode: GuideMode): Promise<Driver> {
       popover.footerButtons.appendChild(skipButton)
     },
     onDestroyed: (): void => {
-      removeFirstProxyGroupOverlay()
       clearGuideModeObserver()
       clearTourExitHotkeyListener()
       guideMode = 'default'
@@ -769,30 +651,19 @@ export async function startTour(
     isMainGuideCompleted = false
 
     navigate('/home')
-    await sleep(120)
 
     try {
-      await waitForAnyElement(
-        [
-          GUIDE_SELECTORS.addProfileButton,
-          GUIDE_SELECTORS.powerButton,
-          GUIDE_SELECTORS.profileInstallConfirmModal,
-          GUIDE_SELECTORS.adminRequiredModal
-        ],
-        15_000
-      )
+      await waitForAnyElement([
+        GUIDE_SELECTORS.homeReady,
+        GUIDE_SELECTORS.profileInstallConfirmModal,
+        GUIDE_SELECTORS.adminRequiredModal
+      ])
     } catch {
-      // ignore and let driver fallback to dynamic element resolvers
+      return
     }
 
     const d = await createDriver(navigate)
     d.drive()
-
-    if (resolveElement(GUIDE_SELECTORS.adminRequiredModal)) {
-      await restartGuideInMode('admin-required')
-    } else if (resolveElement(GUIDE_SELECTORS.profileInstallConfirmModal)) {
-      await restartGuideInMode('deep-link')
-    }
   } finally {
     isStartingTour = false
   }

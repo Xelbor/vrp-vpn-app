@@ -70,6 +70,18 @@
   font-family: 'Geist', sans-serif;
 }
 
+@keyframes floating-icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-thumb {
+    animation: none !important;
+  }
+}
+
 html,
 body {
   background: none !important;

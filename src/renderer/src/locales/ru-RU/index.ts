@@ -172,7 +172,15 @@ export default {
       subscription: 'Подписка',
       profile: 'Профиль',
       server: 'Сервер',
-      pingTest: 'Проверить пинг всех серверов'
+      pingTest: 'Проверить пинг всех серверов',
+      subscriptionExpiring_one: 'Подписка закончится через {{count}} день',
+      subscriptionExpiring_few: 'Подписка закончится через {{count}} дня',
+      subscriptionExpiring_many: 'Подписка закончится через {{count}} дней',
+      subscriptionExpiringToday: 'Подписка закончится сегодня',
+      subscriptionExpired: 'Подписка закончилась',
+      subscriptionExpiringHint: 'Продлите до {{date}}, чтобы не потерять доступ',
+      subscriptionExpiredHint: 'Продлите подписку, чтобы восстановить доступ',
+      renewSubscription: 'Оплатить'
     },
     settings: {
       title: 'Настройки приложения',
@@ -242,7 +250,18 @@ export default {
       vpnEnabled: 'VPN',
       vpnDisabled: 'Напрямую',
       vpnToggleHint: 'Включить/отключить VPN для приложения',
-      vpnApplying: 'Применение…'
+      vpnApplying: 'Применение…',
+      emptyActiveTitle: 'Нет активных подключений',
+      emptyActiveDescription:
+        'Сейчас через прокси ничего не идёт. Новые подключения появятся здесь, как только приложение начнёт передавать трафик.',
+      emptyClosedTitle: 'Нет закрытых подключений',
+      emptyClosedDescription: 'Здесь будут храниться завершённые и закрытые подключения.',
+      emptyProcessesTitle: 'Подключений пока нет',
+      emptyProcessesDescription: 'Приложения, которые ходят через прокси, появятся здесь с группировкой по процессам.',
+      emptyFilterTitle: 'Ничего не найдено',
+      emptyFilterDescription: 'Измените запрос или сбросьте фильтр, чтобы увидеть всё снова.',
+      clearFilter: 'Сбросить фильтр',
+      showClosed: 'Показать закрытые'
     },
     logs: {
       title: 'Логи',
@@ -943,9 +962,10 @@ export default {
     profileAnnounceTitle: 'Объявление',
     profileAnnounceDesc: 'Важные сообщения и новости от провайдера.',
     powerButtonTitle: 'Кнопка подключения',
-    powerButtonDesc: 'Нажмите эту кнопку, чтобы подключиться.',
-    groupSelectorTitle: 'Выбор группы',
-    groupSelectorDesc: 'Нажмите здесь, чтобы открыть список прокси-групп.',
+    powerButtonDesc: 'Эта кнопка подключает или отключает VPN.',
+    groupSelectorTitle: 'Выбор сервера',
+    groupSelectorDesc:
+      'Этот селектор открывает список серверов текущей прокси-группы прямо на главной странице.',
     firstGroupTitle: 'Прокси-группа',
     firstGroupDesc: 'Нажмите на группу, чтобы раскрыть список серверов.',
     firstGroupExpandedTitle: 'Список серверов',

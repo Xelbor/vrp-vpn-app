@@ -152,6 +152,7 @@ interface ControllerProxiesDetail {
   smux: boolean
   uot: boolean
   serverDescription?: string
+  'provider-name'?: string
 }
 
 interface ControllerGroupDetail {

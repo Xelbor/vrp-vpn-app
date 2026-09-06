@@ -72,6 +72,12 @@ interface ProxyListContext {
   focusRequest: ProxyGlobeFocusRequest | null
 }
 
+function getProviderName(
+  proxy: ControllerProxiesDetail | ControllerGroupDetail
+): string | undefined {
+  return 'provider-name' in proxy ? proxy['provider-name'] : undefined
+}
+
 const ProxyListHeader: React.FC<{ context: ProxyListContext }> = ({ context }) => (
   <div className="h-[clamp(20rem,56vh,32rem)] min-h-0">
     <ProxyGlobe
@@ -123,6 +129,7 @@ const Proxies: React.FC = () => {
   const completedProxiesRef = useRef<Set<string>>(new Set())
   const [delayingTick, setDelayingTick] = useState(0)
   const prevGroupsLengthRef = useRef(0)
+  const prevExpandProxyGroupsRef = useRef(expandProxyGroups)
   const [isSettingModalOpen, setIsSettingModalOpen] = useState(false)
   const [updatingSubscription, setUpdatingSubscription] = useState(false)
   const virtuosoRef = useRef<VirtuosoHandle>(null)
@@ -139,27 +146,37 @@ const Proxies: React.FC = () => {
     if (groups.length !== prevGroupsLengthRef.current) {
       prevGroupsLengthRef.current = groups.length
       setIsOpen((prev) => {
-        if (prev.length === groups.length && prev.every(Boolean)) return prev
-        return Array(groups.length).fill(true)
+        if (prev.length === groups.length) return prev
+        const next = Array(groups.length).fill(expandProxyGroups)
+        prev.forEach((value, index) => {
+          if (index < next.length) next[index] = value
+        })
+        return next
       })
       setDelaying((prev) => {
         if (prev.length === groups.length) return prev
         const next = Array(groups.length).fill(false)
-        prev.forEach((v, i) => { if (i < next.length) next[i] = v })
+        prev.forEach((v, i) => {
+          if (i < next.length) next[i] = v
+        })
         return next
       })
       setSearchValue((prev) => {
         if (prev.length === groups.length) return prev
         const next = Array(groups.length).fill('')
-        prev.forEach((v, i) => { if (i < next.length) next[i] = v })
+        prev.forEach((v, i) => {
+          if (i < next.length) next[i] = v
+        })
         return next
       })
     }
   }, [groups.length, expandProxyGroups])
 
-  // Re-apply to every group when the setting itself flips (e.g. a subscription sent the
-  // `expand-proxy-groups` header while this page is already open).
-  
+  useEffect(() => {
+    if (prevExpandProxyGroupsRef.current === expandProxyGroups) return
+    prevExpandProxyGroupsRef.current = expandProxyGroups
+    setIsOpen(Array(groups.length).fill(expandProxyGroups))
+  }, [expandProxyGroups, groups.length])
 
   useEffect(() => {
     groups.forEach((group) => {
@@ -277,7 +294,7 @@ const Proxies: React.FC = () => {
       proxy: ControllerProxiesDetail | ControllerGroupDetail,
       url?: string
     ): Promise<ControllerProxiesDelay> => {
-      return await mihomoProxyDelay(proxy.name, url)
+      return await mihomoProxyDelay(proxy.name, url, getProviderName(proxy))
     },
     []
   )
@@ -317,7 +334,11 @@ const Proxies: React.FC = () => {
       for (const proxy of allProxies[index]) {
         const promise = Promise.resolve().then(async () => {
           try {
-            await mihomoProxyDelay(proxy.name, groups[index].testUrl)
+            await mihomoProxyDelay(
+              proxy.name,
+              groups[index].testUrl,
+              getProviderName(proxy)
+            )
           } catch {
             // ignore
           } finally {

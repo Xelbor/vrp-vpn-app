@@ -41,6 +41,25 @@ export async function getProfileItem(id: string | undefined): Promise<ProfileIte
   return items?.find((item) => item.id === id)
 }
 
+async function applyProfileUiSettings(profile: ProfileItem | undefined): Promise<void> {
+  const appConfig = await getAppConfig()
+  const patch: Partial<AppConfig> = {}
+  const customTheme = profile?.customCss || 'default.css'
+
+  if (appConfig.customTheme !== customTheme) {
+    patch.customTheme = customTheme
+  }
+  if (
+    profile?.expandProxyGroups !== undefined &&
+    appConfig.expandProxyGroups !== profile.expandProxyGroups
+  ) {
+    patch.expandProxyGroups = profile.expandProxyGroups
+  }
+  if (Object.keys(patch).length > 0) {
+    await patchAppConfig(patch)
+  }
+}
+
 export async function changeCurrentProfile(id: string): Promise<void> {
   const config = await getProfileConfig()
   const current = config.current
@@ -61,7 +80,7 @@ export async function changeCurrentProfile(id: string): Promise<void> {
   }
   await enforceGlobalModeRestriction(id)
   const profile = await getProfileItem(id)
-  await patchAppConfig({ customTheme: profile?.customCss || 'default.css' })
+  await applyProfileUiSettings(profile)
   mainWindow?.webContents.send('appConfigUpdated')
 }
 
@@ -98,9 +117,10 @@ export async function addProfileItem(item: Partial<ProfileItem>): Promise<void> 
     await changeCurrentProfile(newItem.id)
   } else if (config.current === newItem.id) {
     await enforceGlobalModeRestriction(newItem.id)
-    await patchAppConfig({ customTheme: newItem.customCss || 'default.css' })
+    await applyProfileUiSettings(newItem)
     mainWindow?.webContents.send('appConfigUpdated')
   }
+  mainWindow?.webContents.send('profileConfigUpdated')
 }
 
 async function enforceGlobalModeRestriction(id: string): Promise<void> {
@@ -276,6 +296,15 @@ export async function createProfile(item: Partial<ProfileItem>): Promise<Profile
       if (homeKey) {
         newItem.home = headers[homeKey]
       }
+      const homeNameKey = Object.keys(headers).find((k) =>
+        k.toLowerCase().endsWith('profile-web-page-name')
+      )
+      if (homeNameKey) {
+        const homeNameValue = headers[homeNameKey]
+        newItem.homeName = homeNameValue.startsWith('base64:')
+          ? Buffer.from(homeNameValue.slice(7), 'base64').toString('utf-8')
+          : homeNameValue
+      }
       const intervalKey = Object.keys(headers).find((k) =>
         k.toLowerCase().endsWith('profile-update-interval')
       )
@@ -314,6 +343,13 @@ export async function createProfile(item: Partial<ProfileItem>): Promise<Profile
       )
       if (globalModeKey) {
         newItem.globalMode = headers[globalModeKey].toLowerCase() !== 'false'
+      }
+      const expandProxyGroupsKey = Object.keys(headers).find((k) =>
+        k.toLowerCase().endsWith('expand-proxy-groups')
+      )
+      if (expandProxyGroupsKey) {
+        newItem.expandProxyGroups =
+          headers[expandProxyGroupsKey].toLowerCase() !== 'false'
       }
       const announceKey = Object.keys(headers).find((k) =>
         k.toLowerCase().endsWith('announce')

@@ -74,6 +74,13 @@ const Mihomo: React.FC = () => {
   const { core = 'mihomo', maxLogDays = 7, corePermissionMode = 'elevated' } = appConfig || {}
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
   const { ipv6, 'log-level': logLevel = 'info' } = controledMihomoConfig || {}
+  const logLevelOptions: { value: LogLevel; label: string }[] = [
+    { value: 'silent', label: t('pages.mihomo.silent') },
+    { value: 'error', label: t('pages.mihomo.error') },
+    { value: 'warning', label: t('pages.mihomo.warning') },
+    { value: 'info', label: t('pages.mihomo.info') },
+    { value: 'debug', label: t('pages.mihomo.debug') }
+  ]
 
   const [upgrading, setUpgrading] = useState(false)
   const [showGrantConfirm, setShowGrantConfirm] = useState(false)
@@ -416,21 +423,32 @@ const Mihomo: React.FC = () => {
           />
         </SettingItem>
         <SettingItem title={t('pages.mihomo.logLevel')}>
-          <Select
-            value={logLevel}
-            onValueChange={(value) => onChangeNeedRestart({ 'log-level': value as LogLevel })}
-          >
-            <SelectTrigger size="sm" className="w-[100px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="silent">{t('pages.mihomo.silent')}</SelectItem>
-              <SelectItem value="error">{t('pages.mihomo.error')}</SelectItem>
-              <SelectItem value="warning">{t('pages.mihomo.warning')}</SelectItem>
-              <SelectItem value="info">{t('pages.mihomo.info')}</SelectItem>
-              <SelectItem value="debug">{t('pages.mihomo.debug')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid">
+            {logLevelOptions.map((option) => (
+              <span
+                key={option.value}
+                aria-hidden="true"
+                className="invisible col-start-1 row-start-1 h-0 overflow-hidden whitespace-nowrap border border-transparent pl-3 pr-9 text-sm"
+              >
+                {option.label}
+              </span>
+            ))}
+            <Select
+              value={logLevel}
+              onValueChange={(value) => onChangeNeedRestart({ 'log-level': value as LogLevel })}
+            >
+              <SelectTrigger size="sm" className="col-start-1 row-start-1 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {logLevelOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </SettingItem>
       </SettingCard>
       <PortSetting />

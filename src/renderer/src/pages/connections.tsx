@@ -33,6 +33,7 @@ import { Tabs, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
 import { calcTraffic } from '@renderer/utils/calc'
 import ConnectionItem from '@renderer/components/connections/connection-item'
 import ConnectionTable from '@renderer/components/connections/connection-table'
+import ConnectionsEmpty from '@renderer/components/connections/connections-empty'
 import ProcessItem, { ProcessGroup } from '@renderer/components/connections/process-item'
 import { Virtuoso, VirtuosoGrid } from 'react-virtuoso'
 import dayjs from 'dayjs'
@@ -40,19 +41,23 @@ import ConnectionDetailModal from '@renderer/components/connections/connection-d
 import ConnectionSettingModal from '@renderer/components/connections/connection-setting-modal'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { includesIgnoreCase } from '@renderer/utils/includes'
-import { useIconsStore, useProcessAppName } from '@renderer/store/icons-store'
+import { useIconsStore, useProcessAppName, useProcessIcon } from '@renderer/store/icons-store'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowDownNarrowWide,
   ArrowDownWideNarrow,
   ArrowLeft,
+  AppWindow,
+  History,
   Pause,
   Play,
+  SearchX,
   SlidersHorizontal,
   Table2,
   TableOfContents,
   Trash2,
+  Unplug,
   X
 } from 'lucide-react'
 
@@ -413,6 +418,10 @@ const Connections: React.FC = () => {
     setFilter('')
   }, [])
 
+  const handleClearFilter = useCallback(() => {
+    setFilter('')
+  }, [])
+
   const selectedProcessAppName = useProcessAppName(
     selectedProcess || '',
     displayAppName && selectedProcess !== null
@@ -446,6 +455,53 @@ const Connections: React.FC = () => {
   }, [closedConnections, selectedProcess, matchesSelectedProcess])
 
   const iconEnabled = displayIcon && findProcessMode !== 'off'
+  const isClassicMode = connectionListMode === 'classic'
+  const isProcessListView = !isClassicMode && selectedProcess === null
+  const isProcessDetailView = !isClassicMode && selectedProcess !== null
+  const selectedProcessIcon = useProcessIcon(
+    selectedProcess || '',
+    isProcessDetailView && iconEnabled
+  )
+  const availableClosedCount = isClassicMode ? closedConnections.length : processClosedCount
+  const processEmptyState = filter ? (
+    <ConnectionsEmpty
+      icon={SearchX}
+      title={t('pages.connections.emptyFilterTitle')}
+      description={t('pages.connections.emptyFilterDescription')}
+      action={{ label: t('pages.connections.clearFilter'), onClick: handleClearFilter }}
+    />
+  ) : (
+    <ConnectionsEmpty
+      icon={AppWindow}
+      title={t('pages.connections.emptyProcessesTitle')}
+      description={t('pages.connections.emptyProcessesDescription')}
+    />
+  )
+  const connectionEmptyState = filter ? (
+    <ConnectionsEmpty
+      icon={SearchX}
+      title={t('pages.connections.emptyFilterTitle')}
+      description={t('pages.connections.emptyFilterDescription')}
+      action={{ label: t('pages.connections.clearFilter'), onClick: handleClearFilter }}
+    />
+  ) : tab === 'active' ? (
+    <ConnectionsEmpty
+      icon={Unplug}
+      title={t('pages.connections.emptyActiveTitle')}
+      description={t('pages.connections.emptyActiveDescription')}
+      action={
+        availableClosedCount > 0
+          ? { label: t('pages.connections.showClosed'), onClick: () => setTab('closed') }
+          : undefined
+      }
+    />
+  ) : (
+    <ConnectionsEmpty
+      icon={History}
+      title={t('pages.connections.emptyClosedTitle')}
+      description={t('pages.connections.emptyClosedDescription')}
+    />
+  )
 
   const renderConnectionItem = useCallback(
     (i: number, connection: ControllerConnectionDetail) => {
@@ -455,6 +511,7 @@ const Connections: React.FC = () => {
           setIsDetailModalOpen={setIsDetailModalOpen}
           displayIcon={iconEnabled}
           displayAppName={displayAppName}
+          showProcess={!isProcessDetailView}
           close={closeConnection}
           index={i}
           key={connection.id}
@@ -462,7 +519,7 @@ const Connections: React.FC = () => {
         />
       )
     },
-    [iconEnabled, displayAppName, closeConnection]
+    [iconEnabled, displayAppName, isProcessDetailView, closeConnection]
   )
 
   const renderProcessItem = useCallback(
@@ -492,17 +549,26 @@ const Connections: React.FC = () => {
 
   // Whether we are in the process list view (level 1) or connections view (level 2)
   // In classic mode, we never show the process list
-  const isClassicMode = connectionListMode === 'classic'
-  const isProcessListView = !isClassicMode && selectedProcess === null
-
   return (
     <BasePage
       title={
-        isProcessListView
-          ? t('pages.connections.title')
-          : isClassicMode
-            ? t('pages.connections.title')
-            : selectedProcessName
+        isProcessDetailView ? (
+          <div className="flex min-w-0 items-center gap-2">
+            {iconEnabled &&
+              (selectedProcessIcon ? (
+                <img src={selectedProcessIcon} alt="" className="size-6 rounded-md" />
+              ) : (
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-semibold text-muted-foreground">
+                  {selectedProcessName.slice(0, 2).toUpperCase()}
+                </span>
+              ))}
+            <span className="min-w-0 truncate" title={selectedProcessName}>
+              {selectedProcessName}
+            </span>
+          </div>
+        ) : (
+          t('pages.connections.title')
+        )
       }
       header={
         <div className="flex items-center gap-1">
@@ -748,18 +814,21 @@ const Connections: React.FC = () => {
       </div>
       <div className="h-[calc(100vh-106px)] mt-px mb-2">
         {isProcessListView ? (
-          <VirtuosoGrid
-            data={filteredProcessGroups}
-            listClassName="grid grid-cols-2 gap-y-0 px-1"
-            itemContent={renderProcessItem}
-            initialItemCount={Math.min(filteredProcessGroups.length, 16)}
-          />
+          filteredProcessGroups.length > 0 ? (
+            <VirtuosoGrid
+              data={filteredProcessGroups}
+              listClassName="grid grid-cols-2 gap-y-0 px-1"
+              itemContent={renderProcessItem}
+            />
+          ) : (
+            processEmptyState
+          )
         ) : viewMode === 'list' ? (
-          <Virtuoso
-            data={filteredConnections}
-            itemContent={renderConnectionItem}
-            initialItemCount={Math.min(filteredConnections.length, 15)}
-          />
+          filteredConnections.length > 0 ? (
+            <Virtuoso data={filteredConnections} itemContent={renderConnectionItem} />
+          ) : (
+            connectionEmptyState
+          )
         ) : (
           <ConnectionTable
             connections={filteredConnections}
@@ -772,6 +841,7 @@ const Connections: React.FC = () => {
             initialSortDirection={connectionTableSortDirection}
             onColumnWidthChange={handleColumnWidthChange}
             onSortChange={handleSortChange}
+            emptyState={connectionEmptyState}
           />
         )}
       </div>
