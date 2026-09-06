@@ -1,7 +1,6 @@
 import createGlobe, { Globe } from 'cobe'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@renderer/components/ui/button'
 import { cn } from '@renderer/lib/utils'
 import { countryFlag, countryName } from '@renderer/utils/country-name'
 import { clampGlobeTheta, locationToGlobeAngles, projectGlobeLocation } from './globe-math'
@@ -19,11 +18,17 @@ export interface ProxyGlobeCountry {
   nodes: ProxyGlobeNode[]
 }
 
+export interface ProxyGlobeFocusRequest {
+  countryCode: string
+  id: number
+}
+
 interface ProxyGlobeProps {
   countries: ProxyGlobeCountry[]
   locale: string
-  switchingProxy: string | null
-  onSelect: (groupName: string, proxyName: string) => Promise<void>
+  focusRequest?: ProxyGlobeFocusRequest | null
+  switchingProxy?: string | null
+  onSelect?: (groupName: string, proxyName: string) => Promise<void>
 }
 
 export function buildProxyGlobeCountries(groups: ControllerMixedGroup[]): {
@@ -69,23 +74,6 @@ function markerId(countryCode: string): string {
   return `country-${countryCode.toLowerCase()}`
 }
 
-function CountryNameLabel({
-  countryCode,
-  locale
-}: {
-  countryCode: string
-  locale: string
-}): React.ReactElement {
-  return (
-    <span className="inline-flex min-w-0 items-center gap-1.5">
-      <span className="proxy-globe-emoji shrink-0" aria-hidden="true">
-        {countryFlag(countryCode)}
-      </span>
-      <span className="truncate">{countryName(countryCode, locale)}</span>
-    </span>
-  )
-}
-
 function shortestPhiTarget(currentPhi: number, targetPhi: number): number {
   const twoPi = Math.PI * 2
   return currentPhi + ((((targetPhi - currentPhi) % twoPi) + 3 * Math.PI) % twoPi) - Math.PI
@@ -105,8 +93,7 @@ interface PositionedMarker {
 export default function ProxyGlobe({
   countries,
   locale,
-  switchingProxy: _switchingProxy,
-  onSelect: _onSelect
+  focusRequest
 }: ProxyGlobeProps): React.ReactElement {
   const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -137,7 +124,7 @@ export default function ProxyGlobe({
     [countries, selectedCountryCode]
   )
 
-  const selectCountry = (country: ProxyGlobeCountry): void => {
+  const selectCountry = useCallback((country: ProxyGlobeCountry): void => {
     const [targetPhi, targetTheta] = locationToGlobeAngles(country.location)
     targetRotationRef.current = {
       phi: shortestPhiTarget(phiRef.current, targetPhi),
@@ -145,7 +132,7 @@ export default function ProxyGlobe({
     }
     autoRotateResumeAtRef.current = performance.now() + AUTO_ROTATE_RESUME_DELAY
     setSelectedCountryCode(country.countryCode)
-  }
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -264,6 +251,14 @@ export default function ProxyGlobe({
   }, [markers])
 
   useEffect(() => {
+    if (!focusRequest) return
+    const country = countriesRef.current.find(
+      (item) => item.countryCode === focusRequest.countryCode
+    )
+    if (country) selectCountry(country)
+  }, [focusRequest, selectCountry])
+
+  useEffect(() => {
     if (
       selectedCountryCode &&
       !countries.some((country) => country.countryCode === selectedCountryCode)
@@ -304,10 +299,10 @@ export default function ProxyGlobe({
   }
 
   return (
-    <div className="proxy-globe flex h-full min-h-0 w-full flex-col items-center justify-center gap-3 overflow-hidden px-3 pb-4">
+    <div className="proxy-globe flex h-full min-h-0 w-full items-center justify-center overflow-hidden px-3 py-2">
       <div
         ref={containerRef}
-        className="relative aspect-square w-[92%] max-w-[min(70vh,700px)] min-w-0 shrink"
+        className="relative aspect-square w-[78%] max-w-[min(50vh,520px)] min-w-0 shrink"
       >
         <canvas
           ref={canvasRef}
@@ -373,22 +368,6 @@ export default function ProxyGlobe({
           })}
         </div>
       </div>
-      {countries.length > 0 && (
-        <div className="flex max-w-full shrink-0 flex-wrap justify-center gap-1.5 overflow-auto px-2">
-          {countries.map((country) => (
-            <Button
-              key={country.countryCode}
-              type="button"
-              size="sm"
-              variant={country.countryCode === selectedCountryCode ? 'secondary' : 'ghost'}
-              className="h-7 rounded-full px-2.5 text-xs"
-              onClick={() => selectCountry(country)}
-            >
-              <CountryNameLabel countryCode={country.countryCode} locale={locale} />
-            </Button>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

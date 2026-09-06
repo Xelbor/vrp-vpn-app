@@ -59,7 +59,7 @@ const routes = [
   },
   {
     path: '/profiles',
-    element: lazyPage(() => import('@renderer/pages/profiles'))
+    element: <Navigate to="/home" replace />
   },
   {
     path: '/settings',

@@ -976,7 +976,7 @@ export default {
     mainAreaDesc: 'This is the main operation area where you can view and edit detailed settings.',
     profileManagement: 'Profile Management',
     profileManagementDesc:
-      'The profile management card displays the current subscription information. Click to enter the profile management page. Right-click the card to quickly switch profiles.',
+      'The profile card on Home displays the current subscription. Click the profile name to switch profiles and open each profile’s actions.',
     profileImport: 'Import Subscription',
     profileImportDesc: 'Paste your subscription link here and click import.',
     localProfile: 'Create Local Profile',

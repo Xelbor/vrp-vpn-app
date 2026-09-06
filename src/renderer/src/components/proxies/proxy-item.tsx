@@ -9,7 +9,10 @@ import { Gauge, MapPin } from 'lucide-react'
 
 interface Props {
   mutateProxies: () => void
-  onProxyDelay: (proxy: string, url?: string) => Promise<ControllerProxiesDelay>
+  onProxyDelay: (
+    proxy: ControllerProxiesDetail | ControllerGroupDetail,
+    url?: string
+  ) => Promise<ControllerProxiesDelay>
   proxyDisplayLayout: 'hidden' | 'single' | 'double'
   proxy: ControllerProxiesDetail | ControllerGroupDetail
   group: ControllerMixedGroup
@@ -55,11 +58,9 @@ const ProxyItem: React.FC<Props> = React.memo((props) => {
   }, [delay, waitingForNewDelay])
 
   useEffect(() => {
-    if (waitingForNewDelay && !isGroupDelaying) {
-      const timer = setTimeout(() => setWaitingForNewDelay(false), 2000)
-      return () => clearTimeout(timer)
-    }
-    return undefined
+    if (!waitingForNewDelay || isGroupDelaying) return undefined
+    const timer = setTimeout(() => setWaitingForNewDelay(false), 2000)
+    return () => clearTimeout(timer)
   }, [waitingForNewDelay, isGroupDelaying])
 
   const showLoading = loading || isGroupDelaying || waitingForNewDelay
@@ -70,9 +71,18 @@ const ProxyItem: React.FC<Props> = React.memo((props) => {
     return d.toString()
   }
 
+  const delayIndicator = (
+    <span className="relative inline-flex items-center justify-center w-full">
+      {showLoading && <Spinner className="size-3 absolute text-foreground" />}
+      <span className={cn(delayColorClass(delay), showLoading && 'invisible')}>
+        {delayContent(delay)}
+      </span>
+    </span>
+  )
+
   const onDelay = (): void => {
     setLoading(true)
-    onProxyDelay(proxy.name, group.testUrl).finally(() => {
+    onProxyDelay(proxy, group.testUrl).finally(() => {
       mutateProxies()
       setLoading(false)
     })
@@ -133,15 +143,9 @@ const ProxyItem: React.FC<Props> = React.memo((props) => {
                     e.stopPropagation()
                     onDelay()
                   }}
-                  className={cn(
-                    'h-7 w-8 min-w-8 px-0 text-xs font-medium cursor-pointer',
-                    delayColorClass(delay)
-                  )}
+                  className="h-7 w-8 min-w-8 px-0 text-xs font-medium cursor-pointer"
                 >
-                  <span className="relative inline-flex items-center justify-center w-full">
-                    {showLoading && <Spinner className="size-3 absolute" />}
-                    <span className={cn(showLoading && 'invisible')}>{delayContent(delay)}</span>
-                  </span>
+                  {delayIndicator}
                 </Button>
               </div>
             </>
@@ -180,15 +184,9 @@ const ProxyItem: React.FC<Props> = React.memo((props) => {
                     e.stopPropagation()
                     onDelay()
                   }}
-                  className={cn(
-                    'h-7 w-8 min-w-8 px-0 text-xs font-medium cursor-pointer',
-                    delayColorClass(delay)
-                  )}
+                  className="h-7 w-8 min-w-8 px-0 text-xs font-medium cursor-pointer"
                 >
-                  <span className="relative inline-flex items-center justify-center w-full">
-                    {showLoading && <Spinner className="size-3 absolute" />}
-                    <span className={cn(showLoading && 'invisible')}>{delayContent(delay)}</span>
-                  </span>
+                  {delayIndicator}
                 </Button>
               </div>
             </>

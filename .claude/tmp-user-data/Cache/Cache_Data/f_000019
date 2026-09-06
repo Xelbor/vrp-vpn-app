@@ -1,0 +1,633 @@
+import { i as __toESM } from "/@fs/D:/dev/vrp-vpn-app/node_modules/.vite/deps/chunk-XkmBru0b.js?v=086361af";
+import { t as require_react } from "/@fs/D:/dev/vrp-vpn-app/node_modules/.vite/deps/react-D1SWQDdo.js?v=086361af";
+
+//#region node_modules/.pnpm/esm-env@1.2.2/node_modules/esm-env/true.js
+var true_default = true;
+
+//#endregion
+//#region node_modules/.pnpm/number-flow@0.6.0/node_modules/number-flow/dist/ssr-Cre0Q1Ju.mjs
+var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
+var h = String.raw, m = String.raw, v = true_default && (() => {
+	try {
+		document.createElement("div").animate({ opacity: 0 }, { easing: "linear(0, 1)" });
+	} catch {
+		return !1;
+	}
+	return !0;
+})(), k = true_default && typeof CSS < "u" && CSS.supports && CSS.supports("line-height", "mod(1,1)"), S = true_default && typeof matchMedia < "u" ? matchMedia("(prefers-reduced-motion: reduce)") : null, d = "--_number-flow-d-opacity", g = "--_number-flow-d-width", c = "--_number-flow-dx", u = "--_number-flow-d", _ = (() => {
+	try {
+		return CSS.registerProperty({
+			name: d,
+			syntax: "<number>",
+			inherits: !1,
+			initialValue: "0"
+		}), CSS.registerProperty({
+			name: c,
+			syntax: "<length>",
+			inherits: !0,
+			initialValue: "0px"
+		}), CSS.registerProperty({
+			name: g,
+			syntax: "<number>",
+			inherits: !1,
+			initialValue: "0"
+		}), CSS.registerProperty({
+			name: u,
+			syntax: "<number>",
+			inherits: !0,
+			initialValue: "0"
+		}), !0;
+	} catch {
+		return !1;
+	}
+})(), s = "round(nearest, calc(var(--number-flow-mask-height, 0.25em) / 2), 1px)", e = `calc(${s} * 2)`, p$1 = "var(--number-flow-mask-width, 0.5em)", n = `calc(${p$1} / var(--scale-x))`, r$1 = "#000 0, transparent 71%", x = m`:host{display:inline-block;direction:ltr;white-space:nowrap;isolation:isolate;line-height:1}.number,.number__inner{display:inline-block;transform-origin:left top}:host([data-will-change]) :is(.number,.number__inner,.section,.digit,.digit__num,.symbol){will-change:transform}.number{--scale-x:calc(1 + var(${g}) / var(--width));transform:translateX(var(${c})) scaleX(var(--scale-x));margin:0 calc(-1 * ${p$1});position:relative;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 ${n},#000 calc(100% - ${n}),transparent ),linear-gradient(to bottom,transparent 0,#000 ${e},#000 calc(100% - ${e}),transparent 100% ),radial-gradient(at bottom right,${r$1}),radial-gradient(at bottom left,${r$1}),radial-gradient(at top left,${r$1}),radial-gradient(at top right,${r$1});-webkit-mask-size:100% calc(100% - ${e} * 2),calc(100% - ${n} * 2) 100%,${n} ${e},${n} ${e},${n} ${e},${n} ${e};-webkit-mask-position:center,center,top left,top right,bottom right,bottom left;-webkit-mask-repeat:no-repeat}.number__inner{padding:${s} ${p$1};transform:scaleX(calc(1 / var(--scale-x))) translateX(calc(-1 * var(${c})))}:host > :not(.number){z-index:5}.section,.symbol{display:inline-block;position:relative;isolation:isolate}.section::after{content:'\200b';display:inline-block}.section--justify-left{transform-origin:center left}.section--justify-right{transform-origin:center right}.section > [inert],.symbol > [inert]{margin:0 !important;position:absolute !important;z-index:-1}.digit{display:inline-block;position:relative;--c:var(--current) + var(${u})}.digit__num,.number .section::after{padding:${s} 0}.digit__num{display:inline-block;--offset-raw:mod(var(--length) + var(--n) - mod(var(--c),var(--length)),var(--length));--offset:calc( var(--offset-raw) - var(--length) * round(down,var(--offset-raw) / (var(--length) / 2),1) );--y:clamp(-100%,var(--offset) * 100%,100%);transform:translateY(var(--y))}.digit__num[inert]{position:absolute;top:0;left:50%;transform:translateX(-50%) translateY(var(--y))}.digit:not(.is-spinning) .digit__num[inert]{display:none}.symbol__value{display:inline-block;mix-blend-mode:plus-lighter;white-space:pre}.section--justify-left .symbol > [inert]{left:0}.section--justify-right .symbol > [inert]{right:0}.animate-presence{opacity:calc(1 + var(${d}))}`, M = true_default ? HTMLElement : class {}, b = m`:host{display:inline-block;direction:ltr;white-space:nowrap;line-height:1}span{display:inline-block}:host([data-will-change]) span{will-change:transform}.number,.digit{padding:${s} 0}.symbol{white-space:pre}`, y$1 = (t) => `<span class="${t.type === "integer" || t.type === "fraction" ? "digit" : "symbol"}" part="${t.type === "integer" || t.type === "fraction" ? `digit ${t.type}-digit` : `symbol ${t.type}`}">${t.value}</span>`, i$1 = (t, a) => `<span part="${a}">${t.reduce((l$1, f$1) => l$1 + y$1(f$1), "")}</span>`, $ = (t = "") => m`:where(number-flow${t}){line-height:1}number-flow${t} > span{font-kerning:none;display:inline-block;padding:${e} 0}`, V = (t, { nonce: a, elementSuffix: l$1 } = {}) => h`<template shadowroot="open" shadowrootmode="open"
+			><style${a ? ` nonce="${a}"` : ""}>${b}</style
+			><span role="img" aria-label="${t.valueAsString}"
+				>${i$1(t.pre, "left")}<span part="number" class="number"
+					>${i$1(t.integer, "integer")}${i$1(t.fraction, "fraction")}</span
+				>${i$1(t.post, "right")}</span
+			></template
+		><style${a ? ` nonce="${a}"` : ""}>${$(l$1)}</style
+		><span>${t.valueAsString}</span>`;
+
+//#endregion
+//#region node_modules/.pnpm/number-flow@0.6.0/node_modules/number-flow/dist/plugins.mjs
+var f = (e$1, n$1) => e$1 == null ? n$1 : n$1 == null ? e$1 : Math.max(e$1, n$1), i = /* @__PURE__ */ new WeakMap(), l = {
+	onUpdate(e$1, n$1, o) {
+		if (i.set(o, void 0), !o.computedTrend) return;
+		const s$1 = n$1.integer.concat(n$1.fraction).filter((t) => t.type === "integer" || t.type === "fraction"), r$2 = e$1.integer.concat(e$1.fraction).filter((t) => t.type === "integer" || t.type === "fraction"), u$1 = s$1.find((t) => !r$2.find((c$1) => c$1.pos === t.pos && c$1.value === t.value)), a = r$2.find((t) => !s$1.find((c$1) => t.pos === c$1.pos && t.value === c$1.value));
+		i.set(o, f(u$1 == null ? void 0 : u$1.pos, a == null ? void 0 : a.pos));
+	},
+	getDelta(e$1, n$1, o) {
+		const s$1 = e$1 - n$1, r$2 = i.get(o.flow);
+		if (!s$1 && r$2 != null && r$2 >= o.pos) return o.length * o.flow.computedTrend;
+	}
+};
+
+//#endregion
+//#region node_modules/.pnpm/number-flow@0.6.0/node_modules/number-flow/dist/lite.mjs
+var p = (n$1, t, e$1) => {
+	const i$2 = document.createElement(n$1), [s$1, o] = Array.isArray(t) ? [void 0, t] : [t, e$1];
+	return s$1 && Object.assign(i$2, s$1), o?.forEach((a) => i$2.appendChild(a)), i$2;
+}, V$1 = (n$1, t) => {
+	var e$1;
+	return t === "left" ? n$1.offsetLeft : (((e$1 = n$1.offsetParent instanceof HTMLElement ? n$1.offsetParent : null) == null ? void 0 : e$1.offsetWidth) ?? 0) - n$1.offsetWidth - n$1.offsetLeft;
+}, W = (n$1) => n$1.offsetWidth > 0 && n$1.offsetHeight > 0, X = (n$1, t) => {
+	true_default && !customElements.get(n$1) && customElements.define(n$1, t);
+};
+function k$1(n$1, t, { reverse: e$1 = !1 } = {}) {
+	const i$2 = n$1.length;
+	for (let s$1 = e$1 ? i$2 - 1 : 0; e$1 ? s$1 >= 0 : s$1 < i$2; e$1 ? s$1-- : s$1++) t(n$1[s$1], s$1);
+}
+function z(n$1, t, e$1, i$2) {
+	const s$1 = t.formatToParts(n$1);
+	e$1 && s$1.unshift({
+		type: "prefix",
+		value: e$1
+	}), i$2 && s$1.push({
+		type: "suffix",
+		value: i$2
+	});
+	const o = [], a = [], r$2 = [], d$1 = [], c$1 = {}, f$1 = (l$1) => `${l$1}:${c$1[l$1] = (c$1[l$1] ?? -1) + 1}`;
+	let u$1 = "", m$1 = !1, g$1 = !1;
+	for (const l$1 of s$1) {
+		u$1 += l$1.value;
+		const h$1 = l$1.type === "minusSign" || l$1.type === "plusSign" ? "sign" : l$1.type;
+		h$1 === "integer" ? (m$1 = !0, a.push(...l$1.value.split("").map((_$1) => ({
+			type: h$1,
+			value: parseInt(_$1)
+		})))) : h$1 === "group" ? a.push({
+			type: h$1,
+			value: l$1.value
+		}) : h$1 === "decimal" ? (g$1 = !0, r$2.push({
+			type: h$1,
+			value: l$1.value,
+			key: f$1(h$1)
+		})) : h$1 === "fraction" ? r$2.push(...l$1.value.split("").map((_$1) => ({
+			type: h$1,
+			value: parseInt(_$1),
+			key: f$1(h$1),
+			pos: -1 - c$1[h$1]
+		}))) : (m$1 || g$1 ? d$1 : o).push({
+			type: h$1,
+			value: l$1.value,
+			key: f$1(h$1)
+		});
+	}
+	const v$1 = [];
+	for (let l$1 = a.length - 1; l$1 >= 0; l$1--) {
+		const h$1 = a[l$1];
+		v$1.unshift(h$1.type === "integer" ? {
+			...h$1,
+			key: f$1(h$1.type),
+			pos: c$1[h$1.type]
+		} : {
+			...h$1,
+			key: f$1(h$1.type)
+		});
+	}
+	return {
+		pre: o,
+		integer: v$1,
+		fraction: r$2,
+		post: d$1,
+		valueAsString: u$1,
+		value: typeof n$1 == "string" ? parseFloat(n$1) : n$1
+	};
+}
+var B = k && v && _;
+var D = class extends M {
+	constructor() {
+		super(), this.created = !1, this.batched = !1;
+		const { animated: t, ...e$1 } = this.constructor.defaultProps;
+		this._animated = this.computedAnimated = t, Object.assign(this, e$1);
+	}
+	get animated() {
+		return this._animated;
+	}
+	set animated(t) {
+		var e$1;
+		this.animated !== t && (this._animated = t, (e$1 = this.shadowRoot) == null || e$1.getAnimations().forEach((i$2) => i$2.finish()));
+	}
+	/**
+	* @internal
+	*/
+	set data(t) {
+		var r$2, d$1;
+		if (t == null) return;
+		const { pre: e$1, integer: i$2, fraction: s$1, post: o, value: a } = t;
+		if (this.created) {
+			const c$1 = this._data;
+			this._data = t, this.computedTrend = typeof this.trend == "function" ? this.trend(c$1.value, a) : this.trend, this.computedAnimated = B && this._animated && (!this.respectMotionPreference || !((r$2 = S) != null && r$2.matches)) && W(this) && this.ownerDocument.visibilityState === "visible", (d$1 = this.plugins) == null || d$1.forEach((f$1) => {
+				var u$1;
+				return (u$1 = f$1.onUpdate) == null ? void 0 : u$1.call(f$1, t, c$1, this);
+			}), this.batched || this.willUpdate(), this._pre.update(e$1), this._num.update({
+				integer: i$2,
+				fraction: s$1
+			}), this._post.update(o), this.batched || this.didUpdate();
+		} else {
+			this._data = t, this.attachShadow({ mode: "open" });
+			try {
+				this._internals ?? (this._internals = this.attachInternals()), this._internals.role = "img";
+			} catch {}
+			const c$1 = document.createElement("style");
+			this.nonce && (c$1.nonce = this.nonce), c$1.textContent = x, this.shadowRoot.appendChild(c$1), this._pre = new A(this, e$1, {
+				justify: "right",
+				part: "left"
+			}), this.shadowRoot.appendChild(this._pre.el), this._num = new F(this, i$2, s$1), this.shadowRoot.appendChild(this._num.el), this._post = new A(this, o, {
+				justify: "left",
+				part: "right"
+			}), this.shadowRoot.appendChild(this._post.el), this.created = !0;
+		}
+		try {
+			this._internals.ariaLabel = t.valueAsString;
+		} catch {}
+	}
+	/**
+	* @internal
+	*/
+	willUpdate() {
+		this._pre.willUpdate(), this._num.willUpdate(), this._post.willUpdate();
+	}
+	/**
+	* @internal
+	*/
+	didUpdate() {
+		if (!this.computedAnimated) return;
+		this._abortAnimationsFinish ? this._abortAnimationsFinish.abort() : this.dispatchEvent(new Event("animationsstart")), this._pre.didUpdate(), this._num.didUpdate(), this._post.didUpdate();
+		const t = new AbortController();
+		Promise.all(this.shadowRoot.getAnimations().map((e$1) => e$1.finished)).then(() => {
+			t.signal.aborted || (this.dispatchEvent(new Event("animationsfinish")), this._abortAnimationsFinish = void 0);
+		}), this._abortAnimationsFinish = t;
+	}
+};
+D.defaultProps = {
+	transformTiming: {
+		duration: 900,
+		easing: "linear(0,.005,.019,.039,.066,.096,.129,.165,.202,.24,.278,.316,.354,.39,.426,.461,.494,.526,.557,.586,.614,.64,.665,.689,.711,.731,.751,.769,.786,.802,.817,.831,.844,.856,.867,.877,.887,.896,.904,.912,.919,.925,.931,.937,.942,.947,.951,.955,.959,.962,.965,.968,.971,.973,.976,.978,.98,.981,.983,.984,.986,.987,.988,.989,.99,.991,.992,.992,.993,.994,.994,.995,.995,.996,.996,.9963,.9967,.9969,.9972,.9975,.9977,.9979,.9981,.9982,.9984,.9985,.9987,.9988,.9989,1)"
+	},
+	spinTiming: void 0,
+	opacityTiming: {
+		duration: 450,
+		easing: "ease-out"
+	},
+	animated: !0,
+	trend: (n$1, t) => Math.sign(t - n$1),
+	respectMotionPreference: !0,
+	plugins: void 0,
+	digits: void 0
+};
+var F = class {
+	constructor(t, e$1, i$2, { className: s$1, ...o } = {}) {
+		this.flow = t, this._integer = new b$1(t, e$1, {
+			justify: "right",
+			part: "integer"
+		}), this._fraction = new b$1(t, i$2, {
+			justify: "left",
+			part: "fraction"
+		}), this._inner = p("span", { className: "number__inner" }, [this._integer.el, this._fraction.el]), this.el = p("span", {
+			...o,
+			part: "number",
+			className: `number ${s$1 ?? ""}`
+		}, [this._inner]);
+	}
+	willUpdate() {
+		this._prevWidth = this.el.offsetWidth, this._prevLeft = this.el.getBoundingClientRect().left, this._integer.willUpdate(), this._fraction.willUpdate();
+	}
+	update({ integer: t, fraction: e$1 }) {
+		this._integer.update(t), this._fraction.update(e$1);
+	}
+	didUpdate() {
+		const t = this.el.getBoundingClientRect();
+		this._integer.didUpdate(), this._fraction.didUpdate();
+		const e$1 = this._prevLeft - t.left, i$2 = this.el.offsetWidth, s$1 = this._prevWidth - i$2;
+		this.el.style.setProperty("--width", String(i$2)), this.el.animate({
+			[c]: [`${e$1}px`, "0px"],
+			[g]: [s$1, 0]
+		}, {
+			...this.flow.transformTiming,
+			composite: "accumulate"
+		});
+	}
+};
+var E = class {
+	constructor(t, e$1, { justify: i$2, className: s$1, ...o }, a) {
+		this.flow = t, this.children = /* @__PURE__ */ new Map(), this.onCharRemove = (d$1) => () => {
+			this.children.delete(d$1);
+		}, this.justify = i$2;
+		const r$2 = e$1.map((d$1) => this.addChar(d$1).el);
+		this.el = p("span", {
+			...o,
+			className: `section section--justify-${i$2} ${s$1 ?? ""}`
+		}, a ? a(r$2) : r$2);
+	}
+	addChar(t, { startDigitsAtZero: e$1 = !1, ...i$2 } = {}) {
+		const s$1 = t.type === "integer" || t.type === "fraction" ? new x$1(this, t.type, e$1 ? 0 : t.value, t.pos, {
+			...i$2,
+			onRemove: this.onCharRemove(t.key)
+		}) : new I(this, t.type, t.value, {
+			...i$2,
+			onRemove: this.onCharRemove(t.key)
+		});
+		return this.children.set(t.key, s$1), s$1;
+	}
+	unpop(t) {
+		t.el.removeAttribute("inert"), t.el.style.top = "", t.el.style[this.justify] = "";
+	}
+	pop(t) {
+		t.forEach((e$1) => {
+			e$1.el.style.top = `${e$1.el.offsetTop}px`, e$1.el.style[this.justify] = `${V$1(e$1.el, this.justify)}px`;
+		}), t.forEach((e$1) => {
+			e$1.el.setAttribute("inert", ""), e$1.present = !1;
+		});
+	}
+	addNewAndUpdateExisting(t) {
+		const e$1 = /* @__PURE__ */ new Map(), i$2 = /* @__PURE__ */ new Map(), s$1 = this.justify === "left", o = s$1 ? "prepend" : "append";
+		if (k$1(t, (a) => {
+			let r$2;
+			this.children.has(a.key) ? (r$2 = this.children.get(a.key), i$2.set(a, r$2), this.unpop(r$2), r$2.present = !0) : (r$2 = this.addChar(a, {
+				startDigitsAtZero: !0,
+				animateIn: !0
+			}), e$1.set(a, r$2)), this.el[o](r$2.el);
+		}, { reverse: s$1 }), this.flow.computedAnimated) {
+			const a = this.el.getBoundingClientRect();
+			e$1.forEach((r$2) => {
+				r$2.willUpdate(a);
+			});
+		}
+		e$1.forEach((a, r$2) => {
+			a.update(r$2.value);
+		}), i$2.forEach((a, r$2) => {
+			a.update(r$2.value);
+		});
+	}
+	willUpdate() {
+		const t = this.el.getBoundingClientRect();
+		this._prevOffset = t[this.justify], this.children.forEach((e$1) => e$1.willUpdate(t));
+	}
+	didUpdate() {
+		const t = this.el.getBoundingClientRect();
+		this.children.forEach((s$1) => s$1.didUpdate(t));
+		const e$1 = t[this.justify], i$2 = this._prevOffset - e$1;
+		i$2 && this.children.size && this.el.animate({ transform: [`translateX(${i$2}px)`, "none"] }, {
+			...this.flow.transformTiming,
+			composite: "accumulate"
+		});
+	}
+};
+var b$1 = class extends E {
+	update(t) {
+		const e$1 = /* @__PURE__ */ new Map();
+		this.children.forEach((i$2, s$1) => {
+			t.find((o) => o.key === s$1) || e$1.set(s$1, i$2), this.unpop(i$2);
+		}), this.addNewAndUpdateExisting(t), e$1.forEach((i$2) => {
+			i$2 instanceof x$1 && i$2.update(0);
+		}), this.pop(e$1);
+	}
+};
+var A = class extends E {
+	update(t) {
+		const e$1 = /* @__PURE__ */ new Map();
+		this.children.forEach((i$2, s$1) => {
+			t.find((o) => o.key === s$1) || e$1.set(s$1, i$2);
+		}), this.pop(e$1), this.addNewAndUpdateExisting(t);
+	}
+};
+var y = class {
+	constructor(t, e$1, { onRemove: i$2, animateIn: s$1 = !1 } = {}) {
+		this.flow = t, this.el = e$1, this._present = !0, this._remove = () => {
+			var o;
+			this.el.remove(), (o = this._onRemove) == null || o.call(this);
+		}, this.el.classList.add("animate-presence"), this.flow.computedAnimated && s$1 && this.el.animate({ [d]: [-.9999, 0] }, {
+			...this.flow.opacityTiming,
+			composite: "accumulate"
+		}), this._onRemove = i$2;
+	}
+	get present() {
+		return this._present;
+	}
+	set present(t) {
+		if (this._present !== t) {
+			if (this._present = t, t ? this.el.removeAttribute("inert") : this.el.setAttribute("inert", ""), !this.flow.computedAnimated) {
+				t || this._remove();
+				return;
+			}
+			this.el.style.setProperty("--_number-flow-d-opacity", t ? "0" : "-.999"), this.el.animate({ [d]: t ? [-.9999, 0] : [.999, 0] }, {
+				...this.flow.opacityTiming,
+				composite: "accumulate"
+			}), t ? this.flow.removeEventListener("animationsfinish", this._remove) : this.flow.addEventListener("animationsfinish", this._remove, { once: !0 });
+		}
+	}
+};
+var R = class extends y {
+	constructor(t, e$1, i$2, s$1) {
+		super(t.flow, i$2, s$1), this.section = t, this.value = e$1, this.el = i$2;
+	}
+};
+var x$1 = class extends R {
+	constructor(t, e$1, i$2, s$1, o) {
+		var c$1, f$1;
+		const a = (((f$1 = (c$1 = t.flow.digits) == null ? void 0 : c$1[s$1]) == null ? void 0 : f$1.max) ?? 9) + 1, r$2 = Array.from({ length: a }).map((u$1, m$1) => {
+			const g$1 = p("span", { className: "digit__num" }, [document.createTextNode(String(m$1))]);
+			return m$1 !== i$2 && g$1.setAttribute("inert", ""), g$1.style.setProperty("--n", String(m$1)), g$1;
+		}), d$1 = p("span", {
+			part: `digit ${e$1}-digit`,
+			className: "digit"
+		}, r$2);
+		d$1.style.setProperty("--current", String(i$2)), d$1.style.setProperty("--length", String(a)), super(t, i$2, d$1, o), this.pos = s$1, this._onAnimationsFinish = () => {
+			this.el.classList.remove("is-spinning");
+		}, this._numbers = r$2, this.length = a;
+	}
+	willUpdate(t) {
+		const e$1 = this.el.getBoundingClientRect();
+		this._prevValue = this.value;
+		const i$2 = e$1[this.section.justify] - t[this.section.justify], s$1 = e$1.width / 2;
+		this._prevCenter = this.section.justify === "left" ? i$2 + s$1 : i$2 - s$1;
+	}
+	update(t) {
+		this.el.style.setProperty("--current", String(t)), this._numbers.forEach((e$1, i$2) => i$2 === t ? e$1.removeAttribute("inert") : e$1.setAttribute("inert", "")), this.value = t;
+	}
+	didUpdate(t) {
+		const e$1 = this.el.getBoundingClientRect(), i$2 = e$1[this.section.justify] - t[this.section.justify], s$1 = e$1.width / 2, o = this.section.justify === "left" ? i$2 + s$1 : i$2 - s$1, a = this._prevCenter - o;
+		a && this.el.animate({ transform: [`translateX(${a}px)`, "none"] }, {
+			...this.flow.transformTiming,
+			composite: "accumulate"
+		});
+		const r$2 = this.getDelta();
+		r$2 && (this.el.classList.add("is-spinning"), this.el.animate({ [u]: [-r$2, 0] }, {
+			...this.flow.spinTiming ?? this.flow.transformTiming,
+			composite: "accumulate"
+		}), this.flow.addEventListener("animationsfinish", this._onAnimationsFinish, { once: !0 }));
+	}
+	getDelta() {
+		var i$2;
+		if (this.flow.plugins) for (const s$1 of this.flow.plugins) {
+			const o = (i$2 = s$1.getDelta) == null ? void 0 : i$2.call(s$1, this.value, this._prevValue, this);
+			if (o != null) return o;
+		}
+		const t = this.value - this._prevValue, e$1 = this.flow.computedTrend || Math.sign(t);
+		return e$1 < 0 && this.value > this._prevValue ? this.value - this.length - this._prevValue : e$1 > 0 && this.value < this._prevValue ? this.length - this._prevValue + this.value : t;
+	}
+};
+var I = class extends R {
+	constructor(t, e$1, i$2, s$1) {
+		const o = p("span", {
+			className: "symbol__value",
+			textContent: i$2
+		});
+		super(t, i$2, p("span", {
+			part: `symbol ${e$1}`,
+			className: "symbol"
+		}, [o]), s$1), this.type = e$1, this._children = /* @__PURE__ */ new Map(), this._onChildRemove = (a) => () => {
+			this._children.delete(a);
+		}, this._children.set(i$2, new y(this.flow, o, { onRemove: this._onChildRemove(i$2) }));
+	}
+	willUpdate(t) {
+		if (this.type === "decimal") return;
+		this._prevOffset = this.el.getBoundingClientRect()[this.section.justify] - t[this.section.justify];
+	}
+	update(t) {
+		if (this.value !== t) {
+			const e$1 = this._children.get(this.value);
+			e$1 && (e$1.present = !1);
+			const i$2 = this._children.get(t);
+			if (i$2) i$2.present = !0;
+			else {
+				const s$1 = p("span", {
+					className: "symbol__value",
+					textContent: t
+				});
+				this.el.appendChild(s$1), this._children.set(t, new y(this.flow, s$1, {
+					animateIn: !0,
+					onRemove: this._onChildRemove(t)
+				}));
+			}
+		}
+		this.value = t;
+	}
+	didUpdate(t) {
+		if (this.type === "decimal") return;
+		const i$2 = this.el.getBoundingClientRect()[this.section.justify] - t[this.section.justify], s$1 = this._prevOffset - i$2;
+		s$1 && this.el.animate({ transform: [`translateX(${s$1}px)`, "none"] }, {
+			...this.flow.transformTiming,
+			composite: "accumulate"
+		});
+	}
+};
+
+//#endregion
+//#region node_modules/.pnpm/number-flow@0.6.0/node_modules/number-flow/dist/csp.mjs
+var r = (s$1) => [
+	b,
+	$(s$1),
+	x
+];
+
+//#endregion
+//#region node_modules/.pnpm/@number-flow+react@0.6.0_re_182981c142764e069907ab2d075356bc/node_modules/@number-flow/react/dist/NumberFlow-client-BTpPLmzo.mjs
+var isReact19 = parseInt(import_react.version.match(/^(\d+)\./)?.[1]) >= 19;
+var OBSERVED_ATTRIBUTES = ["data", "digits"];
+var NumberFlowElement = class extends D {
+	attributeChangedCallback(attr, _oldValue, newValue) {
+		this[attr] = JSON.parse(newValue);
+	}
+};
+NumberFlowElement.observedAttributes = isReact19 ? [] : OBSERVED_ATTRIBUTES;
+X("number-flow-react", NumberFlowElement);
+var formatters = {};
+function identity(v$1) {
+	return v$1;
+}
+var serialize = isReact19 ? identity : JSON.stringify;
+function splitProps(props) {
+	const { transformTiming, spinTiming, opacityTiming, animated, respectMotionPreference, trend, plugins, ...rest } = props;
+	return [{
+		transformTiming,
+		spinTiming,
+		opacityTiming,
+		animated,
+		respectMotionPreference,
+		trend,
+		plugins
+	}, rest];
+}
+var NumberFlowImpl = class extends import_react.Component {
+	updateProperties(prevProps) {
+		if (!this.el) return;
+		this.el.batched = !this.props.isolate;
+		const [nonData] = splitProps(this.props);
+		Object.entries(nonData).forEach(([k$2, v$1]) => {
+			this.el[k$2] = v$1 ?? NumberFlowElement.defaultProps[k$2];
+		});
+		if (prevProps?.onAnimationsStart) this.el.removeEventListener("animationsstart", prevProps.onAnimationsStart);
+		if (this.props.onAnimationsStart) this.el.addEventListener("animationsstart", this.props.onAnimationsStart);
+		if (prevProps?.onAnimationsFinish) this.el.removeEventListener("animationsfinish", prevProps.onAnimationsFinish);
+		if (this.props.onAnimationsFinish) this.el.addEventListener("animationsfinish", this.props.onAnimationsFinish);
+	}
+	componentDidMount() {
+		this.updateProperties();
+		if (isReact19 && this.el) {
+			this.el.digits = this.props.digits;
+			this.el.data = this.props.data;
+		}
+	}
+	getSnapshotBeforeUpdate(prevProps) {
+		this.updateProperties(prevProps);
+		if (prevProps.data !== this.props.data) {
+			if (this.props.group) {
+				this.props.group.willUpdate();
+				return () => this.props.group?.didUpdate();
+			}
+			if (!this.props.isolate) {
+				this.el?.willUpdate();
+				return () => this.el?.didUpdate();
+			}
+		}
+		return null;
+	}
+	componentDidUpdate(_$1, __, didUpdate) {
+		didUpdate?.();
+	}
+	handleRef(el) {
+		if (this.props.innerRef) this.props.innerRef.current = el;
+		this.el = el;
+	}
+	render() {
+		const [_$1, { innerRef, className, data, nonce, willChange, isolate, group, digits, onAnimationsStart, onAnimationsFinish, ...rest }] = splitProps(this.props);
+		return /* @__PURE__ */ import_react.createElement("number-flow-react", {
+			ref: this.handleRef,
+			"data-will-change": willChange ? "" : void 0,
+			class: className,
+			nonce,
+			...rest,
+			dangerouslySetInnerHTML: { __html: true_default ? "" : V(data, {
+				nonce,
+				elementSuffix: "-react"
+			}) },
+			suppressHydrationWarning: true,
+			digits: serialize(digits),
+			data: serialize(data)
+		});
+	}
+	constructor(props) {
+		super(props);
+		this.handleRef = this.handleRef.bind(this);
+	}
+};
+var NumberFlow = /* @__PURE__ */ import_react.forwardRef(function NumberFlow$1({ value, locales, format, prefix, suffix, ...props }, _ref) {
+	import_react.useImperativeHandle(_ref, () => ref.current, []);
+	const ref = import_react.useRef();
+	const group = import_react.useContext(NumberFlowGroupContext);
+	group?.useRegister(ref);
+	const localesString = import_react.useMemo(() => locales ? JSON.stringify(locales) : "", [locales]);
+	const formatString = import_react.useMemo(() => format ? JSON.stringify(format) : "", [format]);
+	const data = import_react.useMemo(() => {
+		return z(value, formatters[`${localesString}:${formatString}`] ??= new Intl.NumberFormat(locales, format), prefix, suffix);
+	}, [
+		value,
+		localesString,
+		formatString,
+		prefix,
+		suffix
+	]);
+	return /* @__PURE__ */ import_react.createElement(NumberFlowImpl, {
+		...props,
+		group,
+		data,
+		innerRef: ref
+	});
+});
+var NumberFlowGroupContext = /* @__PURE__ */ import_react.createContext(void 0);
+function NumberFlowGroup({ children }) {
+	const flows = import_react.useRef(/* @__PURE__ */ new Set());
+	const updating = import_react.useRef(false);
+	const pending = import_react.useRef(/* @__PURE__ */ new WeakMap());
+	const value = import_react.useMemo(() => ({
+		useRegister(ref) {
+			import_react.useEffect(() => {
+				flows.current.add(ref);
+				return () => {
+					flows.current.delete(ref);
+				};
+			}, []);
+		},
+		willUpdate() {
+			if (updating.current) return;
+			updating.current = true;
+			flows.current.forEach((ref) => {
+				const f$1 = ref.current;
+				if (!f$1 || !f$1.created) return;
+				f$1.willUpdate();
+				pending.current.set(f$1, true);
+			});
+		},
+		didUpdate() {
+			flows.current.forEach((ref) => {
+				const f$1 = ref.current;
+				if (!f$1 || !pending.current.get(f$1)) return;
+				f$1.didUpdate();
+				pending.current.delete(f$1);
+			});
+			updating.current = false;
+		}
+	}), []);
+	return /* @__PURE__ */ import_react.createElement(NumberFlowGroupContext.Provider, { value }, children);
+}
+
+//#endregion
+//#region node_modules/.pnpm/@number-flow+react@0.6.0_re_182981c142764e069907ab2d075356bc/node_modules/@number-flow/react/dist/index.mjs
+var styles = r("-react");
+var useIsSupported = () => import_react.useSyncExternalStore(() => () => {}, () => B, () => false);
+var usePrefersReducedMotion = () => import_react.useSyncExternalStore((cb) => {
+	S?.addEventListener("change", cb);
+	return () => S?.removeEventListener("change", cb);
+}, () => S.matches, () => false);
+function useCanAnimate({ respectMotionPreference = true } = {}) {
+	const isSupported = useIsSupported();
+	const reducedMotion = usePrefersReducedMotion();
+	return isSupported && (!respectMotionPreference || !reducedMotion);
+}
+
+//#endregion
+export { NumberFlowElement, NumberFlowGroup, l as continuous, NumberFlow as default, styles, useCanAnimate, useIsSupported, usePrefersReducedMotion };
+//# sourceMappingURL=@number-flow_react.js.map

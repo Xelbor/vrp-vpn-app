@@ -5,40 +5,51 @@ import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-c
 import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import { useGroups } from '@renderer/hooks/use-groups'
 import {
-  triggerSysProxy,
-  updateTrayIcon,
-  mihomoHotReloadConfig,
   mihomoChangeProxy,
   mihomoCloseAllConnections,
-  mihomoProxyDelay
+  mihomoHotReloadConfig,
+  mihomoProxyDelay,
+  readTextFile,
+  triggerSysProxy,
+  updateTrayIcon
 } from '@renderer/utils/ipc'
 import NumberFlow from '@number-flow/react'
 import { useTranslation } from 'react-i18next'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import HomeConnectionGlobe from '@renderer/components/home/home-connection-globe'
 import {
-  InfinityIcon,
-  WifiOff,
-  PlusCircle,
-  Globe,
-  ArrowUp,
-  RefreshCcw,
   ArrowDown,
-  ChevronsUpDown,
+  ArrowUp,
   Check,
-  Gauge
+  ChevronsUpDown,
+  FileDown,
+  Gauge,
+  Globe,
+  InfinityIcon,
+  Plus,
+  PlusCircle,
+  RefreshCcw,
+  WifiOff
 } from 'lucide-react'
 import { SiTelegram } from 'react-icons/si'
-import { FiUser } from 'react-icons/fi'
 import EditInfoModal from '@renderer/components/profiles/edit-info-modal'
+import ProfileItem from '@renderer/components/profiles/profile-item'
 import { Spinner } from '@renderer/components/ui/spinner'
 import { Button } from '@renderer/components/ui/button'
 import { Separator } from '@renderer/components/ui/separator'
 import { Popover, PopoverContent, PopoverTrigger } from '@renderer/components/ui/popover'
-import { CharacterMorph } from '@renderer/components/ui/character-morph'
 import { calcTraffic } from '@renderer/utils/calc'
 import { useTrafficStore } from '@renderer/store/traffic-store'
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core'
+import { SortableContext } from '@dnd-kit/sortable'
 
 function formatBytes(bytes: number): string {
   if (bytes <= 0) return '0 B'
@@ -80,12 +91,33 @@ const Home: React.FC = () => {
   const { 'mixed-port': mixedPort } = controledMihomoConfig || {}
   const sysProxyDisabled = mixedPort == 0
 
-  const { profileConfig, addProfileItem } = useProfileConfig()
+  const {
+    profileConfig,
+    setProfileConfig,
+    addProfileItem,
+    updateProfileItem,
+    removeProfileItem,
+    changeCurrentProfile
+  } = useProfileConfig()
   const { groups, mutate: mutateGroups } = useGroups()
-  const hasProfiles = (profileConfig?.items?.length ?? 0) > 0
+  const itemsArray = profileConfig?.items ?? []
+  const hasProfiles = itemsArray.length > 0
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingItem, setEditingItem] = useState<ProfileItem | null>(null)
   const [updating, setUpdating] = useState(false)
+  const [switching, setSwitching] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [sortedItems, setSortedItems] = useState<ProfileItem[]>(itemsArray)
+  const [fileOver, setFileOver] = useState(false)
+  const pageRef = useRef<HTMLDivElement>(null)
+  const dragCounterRef = useRef(0)
+  const addProfileItemRef = useRef(addProfileItem)
+  addProfileItemRef.current = addProfileItem
+  const tRef = useRef(t)
+  tRef.current = t
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 2 } })
+  )
 
   const handleAddProfile = (): void => {
     const newProfile: ProfileItem = {
@@ -98,9 +130,105 @@ const Home: React.FC = () => {
     }
     setEditingItem(newProfile)
     setShowEditModal(true)
+    setProfileMenuOpen(false)
   }
 
-  const trafficInfo = useTrafficStore((s) => s.traffic)
+  const handleUpdateAll = async (): Promise<void> => {
+    if (updating) return
+    setUpdating(true)
+    try {
+      for (const item of itemsArray) {
+        if (item.id === profileConfig?.current || item.type !== 'remote') continue
+        await addProfileItem(item)
+      }
+      const currentItem = itemsArray.find((item) => item.id === profileConfig?.current)
+      if (currentItem?.type === 'remote') await addProfileItem(currentItem)
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleProfileSelect = async (id: string): Promise<void> => {
+    if (switching || id === profileConfig?.current) return
+    setSwitching(true)
+    try {
+      await changeCurrentProfile(id)
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      setProfileMenuOpen(false)
+    } finally {
+      setSwitching(false)
+    }
+  }
+
+  const onProfileDragEnd = async (event: DragEndEvent): Promise<void> => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const newOrder = sortedItems.slice()
+    const activeIndex = newOrder.findIndex((item) => item.id === active.id)
+    const overIndex = newOrder.findIndex((item) => item.id === over.id)
+    if (activeIndex < 0 || overIndex < 0) return
+    const [moved] = newOrder.splice(activeIndex, 1)
+    newOrder.splice(overIndex, 0, moved)
+    setSortedItems(newOrder)
+    await setProfileConfig({ current: profileConfig?.current, items: newOrder })
+  }
+
+  const handleDragOver = useCallback((event: DragEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+  }, [])
+  const handleDragEnter = useCallback((event: DragEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragCounterRef.current++
+    if (dragCounterRef.current === 1) setFileOver(true)
+  }, [])
+  const handleDragLeave = useCallback((event: DragEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragCounterRef.current--
+    if (dragCounterRef.current === 0) setFileOver(false)
+  }, [])
+  const handleDrop = useCallback(async (event: DragEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragCounterRef.current = 0
+    setFileOver(false)
+    const file = event.dataTransfer?.files?.[0]
+    if (!file) return
+    const supported = ['.yml', '.yaml', '.json', '.jsonc', '.json5', '.txt'].some((extension) =>
+      file.name.endsWith(extension)
+    )
+    if (!supported) {
+      toast.error(tRef.current('pages.profiles.unsupportedFileType'))
+      return
+    }
+    try {
+      const path = window.api.webUtils.getPathForFile(file)
+      const content = await readTextFile(path)
+      await addProfileItemRef.current({ name: file.name, type: 'local', file: content })
+    } catch (error) {
+      toast.error(tRef.current('pages.profiles.fileImportFailed') + error)
+    }
+  }, [])
+
+  useEffect(() => setSortedItems(itemsArray), [itemsArray])
+  useEffect(() => {
+    const element = pageRef.current
+    if (!element) return
+    element.addEventListener('dragover', handleDragOver)
+    element.addEventListener('dragenter', handleDragEnter)
+    element.addEventListener('dragleave', handleDragLeave)
+    element.addEventListener('drop', handleDrop)
+    return () => {
+      element.removeEventListener('dragover', handleDragOver)
+      element.removeEventListener('dragenter', handleDragEnter)
+      element.removeEventListener('dragleave', handleDragLeave)
+      element.removeEventListener('drop', handleDrop)
+    }
+  }, [handleDragOver, handleDragEnter, handleDragLeave, handleDrop])
+
+  const trafficInfo = useTrafficStore((state) => state.traffic)
 
   const [loading, setLoading] = useState(false)
   const [loadingDirection, setLoadingDirection] = useState<'connecting' | 'disconnecting'>(
@@ -144,12 +272,6 @@ const Home: React.FC = () => {
     : isSelected
       ? t('pages.home.connected')
       : t('pages.home.disconnected')
-  const statusWidthTexts = [
-    t('pages.home.connecting'),
-    t('pages.home.disconnecting'),
-    t('pages.home.connected'),
-    t('pages.home.disconnected')
-  ]
   const showConnectedTimer = !loading && isSelected
   const elapsedHours = Math.floor(elapsed / 3600)
   const elapsedMinutes = Math.floor((elapsed % 3600) / 60)
@@ -328,7 +450,35 @@ const Home: React.FC = () => {
   }
 
   return (
-    <BasePage>
+    <BasePage
+      ref={pageRef}
+      contentClassName="sm:pr-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
+    >
+      {showEditModal && editingItem && (
+        <EditInfoModal
+          item={editingItem}
+          isCurrent={editingItem.id === profileConfig?.current}
+          updateProfileItem={async (item: ProfileItem) => {
+            await addProfileItem(item)
+            setShowEditModal(false)
+            setEditingItem(null)
+          }}
+          onClose={() => {
+            setShowEditModal(false)
+            setEditingItem(null)
+          }}
+        />
+      )}
+      {fileOver && (
+        <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 px-12 py-8">
+            <FileDown className="size-10 text-primary" />
+            <span className="text-sm font-medium text-primary">
+              {t('pages.profiles.dropFileHint')}
+            </span>
+          </div>
+        </div>
+      )}
       {!hasProfiles ? (
         <div className="h-full w-full flex items-center justify-center">
           <div className="flex flex-col items-center gap-4 max-w-75 rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl p-8">
@@ -346,53 +496,93 @@ const Home: React.FC = () => {
               <span className="text-sm font-medium">{t('pages.profiles.addProfile')}</span>
             </button>
           </div>
-          {showEditModal && editingItem && (
-            <EditInfoModal
-              item={editingItem}
-              isCurrent={false}
-              updateProfileItem={async (item: ProfileItem) => {
-                await addProfileItem(item)
-                setShowEditModal(false)
-                setEditingItem(null)
-              }}
-              onClose={() => {
-                setShowEditModal(false)
-                setEditingItem(null)
-              }}
-            />
-          )}
         </div>
       ) : (
         <div className="flex flex-col h-full px-2 pb-2 gap-2 sm:gap-3">
           {/* Profile card */}
           {currentProfile && (
             <div className="w-full max-w-lg self-center rounded-2xl border border-stroke bg-card/45 p-2 backdrop-blur-xl sm:p-3">
-              <div data-guide="home-profile-header" className="flex min-w-0 items-center gap-2">
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/90 text-foreground dark:bg-white/10">
-                    {currentProfile.logo ? (
-                      <img
-                        src={currentProfile.logo}
-                        alt=""
-                        className="size-full object-cover"
-                        onError={(e) => {
-                          ;(e.target as HTMLImageElement).style.display = 'none'
-                        }}
-                      />
-                    ) : (
-                      <FiUser className="size-4" aria-hidden="true" />
-                    )}
+              <div data-guide="home-profile-header" className="relative min-w-0">
+                <div className="flex min-w-0 flex-col items-center gap-1 px-10 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+                    <span>{t('pages.home.profile')}</span>
                   </div>
-                  <div className="flex min-w-0 flex-col">
-                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                      {t('pages.home.profile')}
-                    </span>
-                    <span
-                      title={currentProfile.name}
-                      className="truncate text-base font-medium leading-tight text-foreground"
-                    >
-                      {currentProfile.name}
-                    </span>
+                  <div className="relative min-w-0">
+                    <Popover open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="group flex min-w-0 max-w-full items-center justify-center gap-2 rounded-lg px-2 py-1 outline-hidden transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+                          aria-label={t('pages.home.profile')}
+                        >
+                          <span
+                            title={currentProfile.name}
+                            className="min-w-0 truncate text-base font-medium leading-tight text-foreground"
+                          >
+                            {currentProfile.name}
+                          </span>
+                          <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        side="bottom"
+                        align="center"
+                        sideOffset={6}
+                        className="w-[min(22rem,calc(100vw-2rem))] p-1.5"
+                      >
+                        <div className="mb-1 flex items-center justify-between px-1">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {t('pages.home.profile')}
+                          </span>
+                          <div className="flex items-center gap-0.5">
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              title={t('pages.profiles.updateAll')}
+                              aria-label={t('pages.profiles.updateAll')}
+                              onClick={() => void handleUpdateAll()}
+                              disabled={updating}
+                            >
+                              <RefreshCcw className={updating ? 'animate-spin' : ''} />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              title={t('pages.profiles.addProfile')}
+                              aria-label={t('pages.profiles.addProfile')}
+                              onClick={handleAddProfile}
+                            >
+                              <Plus />
+                            </Button>
+                          </div>
+                        </div>
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(event) => void onProfileDragEnd(event)}
+                        >
+                          <SortableContext items={sortedItems.map((item) => item.id)}>
+                            <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
+                              {sortedItems.map((item) => (
+                                <ProfileItem
+                                  key={item.id}
+                                  info={item}
+                                  variant="compact"
+                                  isCurrent={item.id === profileConfig?.current}
+                                  addProfileItem={addProfileItem}
+                                  removeProfileItem={removeProfileItem}
+                                  updateProfileItem={updateProfileItem}
+                                  switching={switching}
+                                  onClick={() => handleProfileSelect(item.id)}
+                                />
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
                 {currentProfile.type === 'remote' && (
@@ -404,7 +594,7 @@ const Home: React.FC = () => {
                     disabled={updating}
                     aria-label={t('profile.updateSubscription')}
                     title={t('profile.updateSubscription')}
-                    className="shrink-0 text-muted-foreground hover:text-foreground"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     <RefreshCcw className={updating ? 'animate-spin' : ''} />
                   </Button>
@@ -414,7 +604,7 @@ const Home: React.FC = () => {
               {currentProfile.announce && (
                 <div
                   data-guide="home-profile-announce"
-                  className="mt-2 min-w-0 whitespace-pre-line break-words text-left text-xs font-medium text-foreground"
+                  className="mt-2 min-w-0 whitespace-pre-line break-words text-center text-xs font-medium text-foreground"
                 >
                   {currentProfile.announce}
                 </div>

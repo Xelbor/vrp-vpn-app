@@ -1,11 +1,9 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   HomeIcon,
-  ProfileIcon,
   ProxiesIcon,
-  ConnectionsIcon,
   RulesIcon,
   LogsIcon,
   SettingsIcon,
@@ -24,18 +22,15 @@ import {
   SidebarMenuItem,
   useSidebar
 } from '@renderer/components/ui/sidebar'
-import { useProfileConfig } from '@renderer/hooks/use-profile-config'
-import ConfigViewer from '@renderer/components/sider/config-viewer'
 
 const navItems = [
   { key: 'main', path: '/home', icon: HomeIcon, i18nKey: 'sider.home' },
+  { key: 'proxy', path: '/proxies', icon: ProxiesIcon, i18nKey: 'sider.proxyGroup' },
   { key: 'connection', path: '/connections', icon: LayoutGrid, i18nKey: 'sider.connection' },
   { key: 'rule', path: '/rules', icon: RulesIcon, i18nKey: 'sider.rules' },
   { key: 'log', path: '/logs', icon: LogsIcon, i18nKey: 'sider.logs' },
   { key: 'settings', path: '/settings', icon: SettingsIcon, i18nKey: 'common.settings' }
 ]
-
-const allowedWithoutProfiles = new Set(['main', 'profile', 'settings'])
 
 const AppSidebar: React.FC = () => {
   const { t } = useTranslation()
@@ -43,14 +38,6 @@ const AppSidebar: React.FC = () => {
   const navigate = useNavigate()
   const { toggleSidebar, setOpen, setOpenMobile, isMobile, state } = useSidebar()
   const collapsed = state === 'collapsed'
-  const [showRuntimeConfig, setShowRuntimeConfig] = useState(false)
-  const { profileConfig } = useProfileConfig()
-  const hasProfiles = (profileConfig?.items?.length ?? 0) > 0
-  const currentProfile = profileConfig?.items?.find((i) => i.id === profileConfig.current)
-  const globalModeAllowed = currentProfile?.globalMode !== false
-  const filteredNavItems = hasProfiles
-    ? navItems
-    : navItems.filter((item) => allowedWithoutProfiles.has(item.key))
 
   return (
     <Sidebar
@@ -65,7 +52,7 @@ const AppSidebar: React.FC = () => {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredNavItems.map((item) => {
+              {navItems.map((item) => {
                 const Icon = item.icon
                 const isActive = location.pathname.includes(item.path)
                 return (
@@ -83,9 +70,6 @@ const AppSidebar: React.FC = () => {
                           setOpen(false)
                         }
                       }}
-                      onDoubleClick={
-                        item.key === 'profile' ? () => setShowRuntimeConfig(true) : undefined
-                      }
                     >
                       <Icon className="size-4" />
                       <span>{t(item.i18nKey)}</span>
@@ -98,9 +82,7 @@ const AppSidebar: React.FC = () => {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="flex flex-col items-center gap-2">
-          {hasProfiles && globalModeAllowed}
-          <SidebarMenu>
+        <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
                 tooltip={t('common.toggleSidebar')}
@@ -115,10 +97,8 @@ const AppSidebar: React.FC = () => {
                 <span>{t('common.hideSidebar')}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          </SidebarMenu>
-        </div>
+        </SidebarMenu>
       </SidebarFooter>
-      {showRuntimeConfig && <ConfigViewer onClose={() => setShowRuntimeConfig(false)} />}
     </Sidebar>
   )
 }

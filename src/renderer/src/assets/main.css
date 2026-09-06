@@ -590,27 +590,6 @@
   animation: proxy-row-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes sticky-header-settle {
-  from {
-    opacity: 0.25;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-
-[data-scrolled] [data-testid='virtuoso-top-item-list'] [data-slot='card']::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background-color: var(--card);
-  pointer-events: none;
-  z-index: -1;
-  animation: sticky-header-settle 250ms ease-out forwards;
-}
-
 .proxy-globe {
   font-family: 'Pixeloid Sans', sans-serif;
 }
@@ -838,4 +817,9 @@
 .timer {
   font-family: 'Pixeloid Sans', sans-serif;
   font-size: 14px;
+}
+
+.traffic-text {
+  font-family: 'Pixeloid Sans', sans-serif;
+  font-size: 12px;
 }

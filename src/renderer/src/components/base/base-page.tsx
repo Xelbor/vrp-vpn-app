@@ -6,7 +6,7 @@ import React, { forwardRef, useImperativeHandle, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 
-const sidebarPaths = new Set(['/home', '/profiles', '/proxies', '/connections', '/rules', '/logs', '/settings'])
+const sidebarPaths = new Set(['/home', '/proxies', '/connections', '/rules', '/logs', '/settings'])
 const isMac = platform === 'darwin'
 
 interface Props {
@@ -52,7 +52,7 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
       </div>
       <div
         className={cn(
-          'content h-[calc(100vh-57px)] overflow-y-auto custom-scrollbar md:pl-[calc(var(--sidebar-width-icon)+(--spacing(4)))]',
+          'content h-[calc(100vh-57px)] overflow-y-auto custom-scrollbar sm:pl-[calc(var(--sidebar-width-icon)+(--spacing(4)))]',
           props.contentClassName
         )}
       >
