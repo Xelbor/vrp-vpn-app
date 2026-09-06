@@ -506,12 +506,13 @@ const Connections: React.FC = () => {
       }
       header={
         <div className="flex items-center gap-1">
-          <div className="flex h-8 items-center gap-1 whitespace-nowrap">
-            <span className="px-1 traffic-text text-gray-400">
-              {'\u2191'} {calcTraffic(info.uploadTotal)}
+          <div className="flex flex-col whitespace-nowrap">
+            <span className="traffic-text text-gray-400">
+              <span className="text-green-400">↑</span> {calcTraffic(info.uploadTotal)}
             </span>
-            <span className="px-1 traffic-text text-gray-400">
-              {'\u2193'} {calcTraffic(info.downloadTotal)}
+
+            <span className="traffic-text text-gray-400">
+              <span className="text-blue-400">↓</span> {calcTraffic(info.downloadTotal)}
             </span>
           </div>
           {!isProcessListView && (

@@ -709,12 +709,12 @@ const Home: React.FC = () => {
               }`}
             >
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <ArrowUp className="size-3.5 text-stroke-power-on" />
+                <ArrowUp className="size-3.5 text-stroke-power-on text-green-400" />
                 <span>{calcTraffic(trafficInfo.upTotal)}</span>
               </div>
               <div className="h-3 w-px bg-stroke" />
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <ArrowDown className="size-3.5 text-stroke-power-on" />
+                <ArrowDown className="size-3.5 text-stroke-power-on text-blue-400" />
                 <span>{calcTraffic(trafficInfo.downTotal)}</span>
               </div>
             </div>
