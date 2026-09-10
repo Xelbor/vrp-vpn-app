@@ -31,7 +31,7 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
     <div ref={contentRef} className="w-full h-full">
       <div className="sticky top-0 z-40 h-14.25 w-full">
         <div className="app-drag px-2 pt-3 pb-2 flex justify-between h-14.25">
-          <div className="title h-full text-lg leading-8 flex items-center gap-1 ml-15">
+          <div className="title ml-15 flex h-full min-w-0 flex-1 items-center gap-1 text-lg leading-8">
             {(isSubPage || props.showBackButton) && (
               <Button
                 size="icon-sm"
@@ -44,7 +44,7 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
             )}
             {props.title}
           </div>
-          <div className="header flex gap-1 h-full items-center">
+          <div className="header flex h-full shrink-0 items-center gap-1">
             {props.header}
             {!isMac && <WindowControls />}
           </div>

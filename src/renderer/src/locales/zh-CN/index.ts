@@ -331,7 +331,10 @@ export default {
       emptyFilterTitle: '没有匹配的结果',
       emptyFilterDescription: '换个关键词，或清除筛选条件查看全部内容。',
       clearFilter: '清除筛选',
-      showClosed: '显示已关闭'
+      showClosed: '显示已关闭',
+      sortBy: '连接排序方式',
+      sortAscending: '升序排列',
+      sortDescending: '降序排列'
     },
     logs: {
       title: '实时日志',

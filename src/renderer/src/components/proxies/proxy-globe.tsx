@@ -119,7 +119,7 @@ export default function ProxyGlobe({
       countries.map((country) => ({
         id: markerId(country.countryCode),
         location: country.location,
-        size: country.countryCode === selectedCountryCode ? 0.055 : 0.035
+        size: country.countryCode === selectedCountryCode ? 0.055 : 0.040
       })),
     [countries, selectedCountryCode]
   )

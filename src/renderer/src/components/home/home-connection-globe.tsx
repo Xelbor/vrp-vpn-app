@@ -42,7 +42,7 @@ const HOVER_GLOW_COLOR: Color = [0.3, 0.3, 0.3]
 const STATE_ANIMATION_DURATION = 700
 const HOVER_ANIMATION_DURATION = 250
 const HOME_GLOBE_SCALE = 1.08
-const AUTO_ROTATION_SPEED = (Math.PI * 2) / 90000
+const AUTO_ROTATION_SPEED = - (Math.PI * 2) / 90000
 const MAP_SAMPLES = 8000
 
 function colorsForConnection(

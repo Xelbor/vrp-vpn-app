@@ -259,7 +259,10 @@ export default {
       emptyFilterTitle: 'Nothing matches the filter',
       emptyFilterDescription: 'Try a different query or clear the filter to see everything again.',
       clearFilter: 'Clear filter',
-      showClosed: 'Show closed'
+      showClosed: 'Show closed',
+      sortBy: 'Sort connections by',
+      sortAscending: 'Sort ascending',
+      sortDescending: 'Sort descending'
     },
     logs: {
       title: 'Real-time Logs',

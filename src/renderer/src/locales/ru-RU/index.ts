@@ -261,7 +261,10 @@ export default {
       emptyFilterTitle: 'Ничего не найдено',
       emptyFilterDescription: 'Измените запрос или сбросьте фильтр, чтобы увидеть всё снова.',
       clearFilter: 'Сбросить фильтр',
-      showClosed: 'Показать закрытые'
+      showClosed: 'Показать закрытые',
+      sortBy: 'Сортировать подключения по',
+      sortAscending: 'По возрастанию',
+      sortDescending: 'По убыванию'
     },
     logs: {
       title: 'Логи',

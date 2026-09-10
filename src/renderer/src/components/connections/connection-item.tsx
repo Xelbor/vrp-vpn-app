@@ -26,8 +26,7 @@ const ConnectionItemComponent: React.FC<Props> = ({
   setIsDetailModalOpen
 }) => {
   const path = info.metadata.processPath || ''
-  const showIcon = displayIcon && showProcess
-  const iconUrl = useProcessIcon(path, showIcon)
+  const iconUrl = useProcessIcon(path, displayIcon)
   const displayName = useProcessAppName(path, displayAppName && showProcess)
   const fallbackProcessName = useMemo(
     () => info.metadata.process || info.metadata.sourceIP,
@@ -106,7 +105,7 @@ const ConnectionItemComponent: React.FC<Props> = ({
         onClick={handleCardPress}
       >
         <div className="w-full flex items-center">
-          {showIcon && (
+          {displayIcon && (
             <div className="pl-3">
               {iconUrl ? (
                 <img src={iconUrl} alt="" className="size-12 shrink-0" />
@@ -120,7 +119,7 @@ const ConnectionItemComponent: React.FC<Props> = ({
             </div>
           )}
           <div
-            className={`flex-1 flex flex-col truncate ${showIcon ? 'pl-3' : 'pl-4'} pr-1`}
+            className={`flex-1 flex flex-col truncate ${displayIcon ? 'pl-3' : 'pl-4'} pr-1`}
           >
             <div className="flex items-center gap-2">
               <div className="flex-1 min-w-0 flex items-center gap-1.5">
