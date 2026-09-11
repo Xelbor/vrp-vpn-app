@@ -247,6 +247,7 @@ export default {
       profile: '配置',
       server: '节点',
       pingTest: '测试所有节点延迟',
+      noServersFound: '未找到节点',
       subscriptionExpiring_other: '订阅将在 {{count}} 天后到期',
       subscriptionExpiringToday: '订阅将于今天到期',
       subscriptionExpired: '订阅已到期',

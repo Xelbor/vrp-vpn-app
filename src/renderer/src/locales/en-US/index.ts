@@ -172,6 +172,7 @@ export default {
       profile: 'Profile',
       server: 'Server',
       pingTest: 'Ping all servers',
+      noServersFound: 'No servers found',
       subscriptionExpiring_one: 'Your subscription ends in {{count}} day',
       subscriptionExpiring_other: 'Your subscription ends in {{count}} days',
       subscriptionExpiringToday: 'Your subscription ends today',

@@ -173,6 +173,7 @@ export default {
       profile: 'Профиль',
       server: 'Сервер',
       pingTest: 'Проверить пинг всех серверов',
+      noServersFound: 'Серверы не найдены',
       subscriptionExpiring_one: 'Подписка закончится через {{count}} день',
       subscriptionExpiring_few: 'Подписка закончится через {{count}} дня',
       subscriptionExpiring_many: 'Подписка закончится через {{count}} дней',
