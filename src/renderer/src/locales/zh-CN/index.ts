@@ -107,9 +107,9 @@ export default {
     profileAnnounceTitle: '订阅公告',
     profileAnnounceDesc: '这里会显示服务提供方发布的公告信息。',
     powerButtonTitle: '连接开关',
-    powerButtonDesc: '点击连接按钮开启代理连接。',
-    groupSelectorTitle: '代理组选择器',
-    groupSelectorDesc: '点击首页选择器，进入代理组页面。',
+    powerButtonDesc: '使用此按钮连接或断开 VPN。',
+    groupSelectorTitle: '服务器选择器',
+    groupSelectorDesc: '此选择器会直接在首页打开当前代理组中的可用服务器列表。',
     firstGroupTitle: '第一个代理组',
     firstGroupDesc: '请先点击第一个代理组，将节点列表展开。',
     firstGroupExpandedTitle: '代理组完整内容',
@@ -133,7 +133,7 @@ export default {
     mainAreaDesc: '右侧是应用的主要区域，展示了导航栏所选页面的内容',
     profileManagement: '订阅管理',
     profileManagementDesc:
-      '订阅管理卡片展示当前运行的订阅配置信息，点击进入订阅管理页面可以在这里管理订阅配置',
+      '主页上的订阅卡片展示当前订阅信息。点击配置名称即可切换配置，并打开每个配置的操作菜单。',
     profileImport: '订阅导入',
     profileImportDesc:
       'VRP VPN 支持多种订阅导入方式，在此输入订阅链接，点击导入即可导入您的订阅配置，如果您的订阅需要代理才能更新，请勾选"代理"再点击导入，当然这需要已经有一个可以正常使用的订阅才可以',
@@ -243,8 +243,17 @@ export default {
       noProfile: '没有活动配置',
       unlimited: '无限',
       never: '永不',
+      subscription: '订阅',
+      profile: '配置',
       server: '节点',
-      pingTest: '测试所有节点延迟'
+      pingTest: '测试所有节点延迟',
+      noServersFound: '未找到节点',
+      subscriptionExpiring_other: '订阅将在 {{count}} 天后到期',
+      subscriptionExpiringToday: '订阅将于今天到期',
+      subscriptionExpired: '订阅已到期',
+      subscriptionExpiringHint: '请在 {{date}} 前续费，以免中断使用',
+      subscriptionExpiredHint: '请续费以恢复访问',
+      renewSubscription: '立即续费'
     },
     settings: {
       title: '应用设置',
@@ -278,7 +287,15 @@ export default {
       expandAll: '展开全部',
       collapseAll: '收起全部',
       delayTestAll: '全部延迟测试',
-      nodes: '节点'
+      nodes: '节点',
+      loading: '正在加载位置…',
+      loadFailed: '加载位置失败',
+      retry: '重试',
+      noLocations: '未找到可用位置',
+      unresolvedLocations: '无法确定 {{count}} 个节点的位置',
+      globeLabel: '可用代理全球地图',
+      closeCountry: '关闭国家列表',
+      switchFailed: '切换代理失败'
     },
     connections: {
       title: '连接',
@@ -305,7 +322,20 @@ export default {
       vpnEnabled: 'VPN',
       vpnDisabled: '直连',
       vpnToggleHint: '为此应用切换 VPN',
-      vpnApplying: '应用中…'
+      vpnApplying: '应用中…',
+      emptyActiveTitle: '暂无活动连接',
+      emptyActiveDescription: '当前没有流量经过代理。应用开始联网后，新连接会显示在这里。',
+      emptyClosedTitle: '暂无已关闭连接',
+      emptyClosedDescription: '已结束或被关闭的连接会保留在这里。',
+      emptyProcessesTitle: '暂无连接',
+      emptyProcessesDescription: '经过代理的应用会按进程分组显示在这里。',
+      emptyFilterTitle: '没有匹配的结果',
+      emptyFilterDescription: '换个关键词，或清除筛选条件查看全部内容。',
+      clearFilter: '清除筛选',
+      showClosed: '显示已关闭',
+      sortBy: '连接排序方式',
+      sortAscending: '升序排列',
+      sortDescending: '降序排列'
     },
     logs: {
       title: '实时日志',

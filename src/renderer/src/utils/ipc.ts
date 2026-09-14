@@ -96,9 +96,12 @@ export async function mihomoHotReloadConfig(): Promise<void> {
 
 export async function mihomoProxyDelay(
   proxy: string,
-  url?: string
+  url?: string,
+  provider?: string
 ): Promise<ControllerProxiesDelay> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('mihomoProxyDelay', proxy, url))
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('mihomoProxyDelay', proxy, url, provider)
+  )
 }
 
 export async function mihomoGroupDelay(group: string, url?: string): Promise<ControllerGroupDelay> {
@@ -127,6 +130,15 @@ export async function getAppConfig(force = false): Promise<AppConfig> {
 
 export async function patchAppConfig(patch: Partial<AppConfig>): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('patchAppConfig', patch))
+}
+
+export async function setProcessVpnEnabled(
+  processName: string,
+  enabled: boolean
+): Promise<void> {
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('setProcessVpnEnabled', processName, enabled)
+  )
 }
 
 export async function getControledMihomoConfig(force = false): Promise<Partial<MihomoConfig>> {

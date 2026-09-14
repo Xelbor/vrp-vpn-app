@@ -20,6 +20,7 @@ interface Props {
   initialColumnWidths?: Record<string, number>
   initialSortColumn?: string
   initialSortDirection?: 'asc' | 'desc'
+  emptyState?: React.ReactNode
 }
 
 interface ColumnConfig {
@@ -207,7 +208,8 @@ const ConnectionTable: React.FC<Props> = ({
   onSortChange,
   initialColumnWidths,
   initialSortColumn,
-  initialSortDirection
+  initialSortDirection,
+  emptyState
 }) => {
   const { t } = useTranslation()
   const tableRef = useRef<HTMLDivElement>(null)
@@ -473,9 +475,13 @@ const ConnectionTable: React.FC<Props> = ({
           </tbody>
         </table>
         {sortedConnections.length === 0 && (
-          <div className="flex items-center justify-center h-32 text-muted-foreground">
-            {t('connections.table.noData')}
-          </div>
+          emptyState ? (
+            <div className="h-[calc(100%-2.5rem)] min-h-48">{emptyState}</div>
+          ) : (
+            <div className="flex h-32 items-center justify-center text-muted-foreground">
+              {t('connections.table.noData')}
+            </div>
+          )
         )}
       </div>
     </div>

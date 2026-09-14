@@ -5,27 +5,52 @@ import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-c
 import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import { useGroups } from '@renderer/hooks/use-groups'
 import {
-  triggerSysProxy,
-  updateTrayIcon,
-  mihomoHotReloadConfig,
   mihomoChangeProxy,
   mihomoCloseAllConnections,
-  mihomoProxyDelay
+  mihomoHotReloadConfig,
+  mihomoProxyDelay,
+  readTextFile,
+  triggerSysProxy,
+  updateTrayIcon
 } from '@renderer/utils/ipc'
-import NumberFlow from '@number-flow/react'
 import { useTranslation } from 'react-i18next'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
-import Power from '@renderer/assets/on_icon.svg'
-import Pause from '@renderer/assets/pause_icon.svg'
-import { InfinityIcon, WifiOff, PlusCircle, Globe, ArrowUp, ArrowDown, RefreshCcw, ChevronsUpDown, Check, Gauge } from 'lucide-react'
+import HomeConnectionGlobe from '@renderer/components/home/home-connection-globe'
+import {
+  ArrowDown,
+  ArrowUp,
+  CalendarClock,
+  Check,
+  ChevronsUpDown,
+  CreditCard,
+  FileDown,
+  Gauge,
+  Globe,
+  InfinityIcon,
+  Plus,
+  PlusCircle,
+  RefreshCcw,
+  WifiOff
+} from 'lucide-react'
 import { SiTelegram } from 'react-icons/si'
 import EditInfoModal from '@renderer/components/profiles/edit-info-modal'
+import ProfileItem from '@renderer/components/profiles/profile-item'
 import { Spinner } from '@renderer/components/ui/spinner'
+import { Button } from '@renderer/components/ui/button'
+import { Separator } from '@renderer/components/ui/separator'
 import { Popover, PopoverContent, PopoverTrigger } from '@renderer/components/ui/popover'
-import { CharacterMorph } from '@renderer/components/ui/character-morph'
 import { calcTraffic } from '@renderer/utils/calc'
 import { useTrafficStore } from '@renderer/store/traffic-store'
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core'
+import { SortableContext } from '@dnd-kit/sortable'
 
 function formatBytes(bytes: number): string {
   if (bytes <= 0) return '0 B'
@@ -48,8 +73,44 @@ function delayColorClass(delay: number): string {
   return 'text-warning'
 }
 
-// Module-level variable: persists across component mounts/unmounts
+const EXPIRY_WARNING_DAYS = 3
+
+// Persists across route changes while the app remains connected.
 let connectionStartTime: number | null = null
+
+const ConnectedTimer = memo(({ active }: { active: boolean }) => {
+  const [elapsed, setElapsed] = useState(() => {
+    if (active && connectionStartTime !== null) {
+      return Math.floor((Date.now() - connectionStartTime) / 1000)
+    }
+    return 0
+  })
+
+  useEffect(() => {
+    if (!active) {
+      connectionStartTime = null
+      setElapsed(0)
+      return undefined
+    }
+    if (connectionStartTime === null) {
+      connectionStartTime = Date.now()
+    }
+    const updateElapsed = (): void => {
+      setElapsed(Math.floor((Date.now() - connectionStartTime!) / 1000))
+    }
+    updateElapsed()
+    const interval = setInterval(updateElapsed, 1000)
+    return () => clearInterval(interval)
+  }, [active])
+
+  const hours = Math.floor(elapsed / 3600).toString().padStart(2, '0')
+  const minutes = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0')
+  const seconds = (elapsed % 60).toString().padStart(2, '0')
+
+  return <span>{hours}:{minutes}:{seconds}</span>
+})
+
+ConnectedTimer.displayName = 'ConnectedTimer'
 
 const Home: React.FC = () => {
   const { t } = useTranslation()
@@ -59,7 +120,7 @@ const Home: React.FC = () => {
     sysProxy,
     proxyMode = false,
     onlyActiveDevice = false,
-    autoCloseConnection = true,
+    autoCloseConnection = true
   } = appConfig || {}
   const { enable: writeSysProxy = true, mode } = sysProxy || {}
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
@@ -67,12 +128,33 @@ const Home: React.FC = () => {
   const { 'mixed-port': mixedPort } = controledMihomoConfig || {}
   const sysProxyDisabled = mixedPort == 0
 
-  const { profileConfig, addProfileItem } = useProfileConfig()
+  const {
+    profileConfig,
+    setProfileConfig,
+    addProfileItem,
+    updateProfileItem,
+    removeProfileItem,
+    changeCurrentProfile
+  } = useProfileConfig()
   const { groups, mutate: mutateGroups } = useGroups()
-  const hasProfiles = (profileConfig?.items?.length ?? 0) > 0
+  const itemsArray = profileConfig?.items ?? []
+  const hasProfiles = itemsArray.length > 0
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingItem, setEditingItem] = useState<ProfileItem | null>(null)
   const [updating, setUpdating] = useState(false)
+  const [switching, setSwitching] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [sortedItems, setSortedItems] = useState<ProfileItem[]>(itemsArray)
+  const [fileOver, setFileOver] = useState(false)
+  const pageRef = useRef<HTMLDivElement>(null)
+  const dragCounterRef = useRef(0)
+  const addProfileItemRef = useRef(addProfileItem)
+  addProfileItemRef.current = addProfileItem
+  const tRef = useRef(t)
+  tRef.current = t
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 2 } })
+  )
 
   const handleAddProfile = (): void => {
     const newProfile: ProfileItem = {
@@ -85,40 +167,112 @@ const Home: React.FC = () => {
     }
     setEditingItem(newProfile)
     setShowEditModal(true)
+    setProfileMenuOpen(false)
   }
 
-  const trafficInfo = useTrafficStore((s) => s.traffic)
+  const handleUpdateAll = async (): Promise<void> => {
+    if (updating) return
+    setUpdating(true)
+    try {
+      for (const item of itemsArray) {
+        if (item.id === profileConfig?.current || item.type !== 'remote') continue
+        await addProfileItem(item)
+      }
+      const currentItem = itemsArray.find((item) => item.id === profileConfig?.current)
+      if (currentItem?.type === 'remote') await addProfileItem(currentItem)
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleProfileSelect = async (id: string): Promise<void> => {
+    if (switching || id === profileConfig?.current) return
+    setSwitching(true)
+    try {
+      await changeCurrentProfile(id)
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      setProfileMenuOpen(false)
+    } finally {
+      setSwitching(false)
+    }
+  }
+
+  const onProfileDragEnd = async (event: DragEndEvent): Promise<void> => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const newOrder = sortedItems.slice()
+    const activeIndex = newOrder.findIndex((item) => item.id === active.id)
+    const overIndex = newOrder.findIndex((item) => item.id === over.id)
+    if (activeIndex < 0 || overIndex < 0) return
+    const [moved] = newOrder.splice(activeIndex, 1)
+    newOrder.splice(overIndex, 0, moved)
+    setSortedItems(newOrder)
+    await setProfileConfig({ current: profileConfig?.current, items: newOrder })
+  }
+
+  const handleDragOver = useCallback((event: DragEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+  }, [])
+  const handleDragEnter = useCallback((event: DragEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragCounterRef.current++
+    if (dragCounterRef.current === 1) setFileOver(true)
+  }, [])
+  const handleDragLeave = useCallback((event: DragEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragCounterRef.current--
+    if (dragCounterRef.current === 0) setFileOver(false)
+  }, [])
+  const handleDrop = useCallback(async (event: DragEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragCounterRef.current = 0
+    setFileOver(false)
+    const file = event.dataTransfer?.files?.[0]
+    if (!file) return
+    const supported = ['.yml', '.yaml', '.json', '.jsonc', '.json5', '.txt'].some((extension) =>
+      file.name.endsWith(extension)
+    )
+    if (!supported) {
+      toast.error(tRef.current('pages.profiles.unsupportedFileType'))
+      return
+    }
+    try {
+      const path = window.api.webUtils.getPathForFile(file)
+      const content = await readTextFile(path)
+      await addProfileItemRef.current({ name: file.name, type: 'local', file: content })
+    } catch (error) {
+      toast.error(tRef.current('pages.profiles.fileImportFailed') + error)
+    }
+  }, [])
+
+  useEffect(() => setSortedItems(itemsArray), [itemsArray])
+  useEffect(() => {
+    const element = pageRef.current
+    if (!element) return
+    element.addEventListener('dragover', handleDragOver)
+    element.addEventListener('dragenter', handleDragEnter)
+    element.addEventListener('dragleave', handleDragLeave)
+    element.addEventListener('drop', handleDrop)
+    return () => {
+      element.removeEventListener('dragover', handleDragOver)
+      element.removeEventListener('dragenter', handleDragEnter)
+      element.removeEventListener('dragleave', handleDragLeave)
+      element.removeEventListener('drop', handleDrop)
+    }
+  }, [handleDragOver, handleDragEnter, handleDragLeave, handleDrop])
+
+  const trafficInfo = useTrafficStore((state) => state.traffic)
 
   const [loading, setLoading] = useState(false)
   const [loadingDirection, setLoadingDirection] = useState<'connecting' | 'disconnecting'>(
     'connecting'
   )
 
-  const [elapsed, setElapsed] = useState(() => {
-    if (connectionStartTime !== null) {
-      return Math.floor((Date.now() - connectionStartTime) / 1000)
-    }
-    return 0
-  })
-
   const isSelected = (tun?.enable ?? false) || proxyMode
-
-  useEffect(() => {
-    if (isSelected) {
-      if (connectionStartTime === null) {
-        connectionStartTime = Date.now()
-      }
-      setElapsed(Math.floor((Date.now() - connectionStartTime) / 1000))
-      const interval = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - connectionStartTime!) / 1000))
-      }, 1000)
-      return () => clearInterval(interval)
-    } else {
-      connectionStartTime = null
-      setElapsed(0)
-      return undefined
-    }
-  }, [isSelected])
 
   const isDisabled =
     loading ||
@@ -131,16 +285,7 @@ const Home: React.FC = () => {
     : isSelected
       ? t('pages.home.connected')
       : t('pages.home.disconnected')
-  const statusWidthTexts = [
-    t('pages.home.connecting'),
-    t('pages.home.disconnecting'),
-    t('pages.home.connected'),
-    t('pages.home.disconnected')
-  ]
   const showConnectedTimer = !loading && isSelected
-  const elapsedHours = Math.floor(elapsed / 3600)
-  const elapsedMinutes = Math.floor((elapsed % 3600) / 60)
-  const elapsedSeconds = elapsed % 60
 
   // Current profile & subscription
   const currentProfile = useMemo(() => {
@@ -165,12 +310,41 @@ const Home: React.FC = () => {
   const trafficTotal = subscription?.total ?? 0
   const trafficRemaining = trafficTotal > 0 ? trafficTotal - trafficUsed : 0
   const expireTimestamp = subscription?.expire ?? 0
-  const expireDate = expireTimestamp > 0 ? dayjs.unix(expireTimestamp).format('L') : t('pages.home.never')
-  const daysRemaining =
-    expireTimestamp > 0 ? Math.max(0, dayjs.unix(expireTimestamp).diff(dayjs(), 'day')) : 0
+  const hasExpiry = Number.isFinite(expireTimestamp) && expireTimestamp > 0
+  const [expiryTick, setExpiryTick] = useState(0)
+
+  useEffect(() => {
+    if (!hasExpiry) return undefined
+    const interval = setInterval(() => setExpiryTick((value) => value + 1), 60_000)
+    return () => clearInterval(interval)
+  }, [hasExpiry, expireTimestamp])
+
+  const { expireDate, daysRemaining, isExpired } = useMemo(() => {
+    if (!hasExpiry) {
+      return {
+        expireDate: t('pages.home.never'),
+        daysRemaining: 0,
+        isExpired: false
+      }
+    }
+    const now = dayjs()
+    const expiresAt = dayjs.unix(expireTimestamp)
+    return {
+      expireDate: expiresAt.format('L'),
+      daysRemaining: Math.max(0, expiresAt.diff(now, 'day')),
+      isExpired: expiresAt.isBefore(now)
+    }
+  }, [expireTimestamp, expiryTick, hasExpiry, t])
+  const showExpiryNotice = hasExpiry && daysRemaining <= EXPIRY_WARNING_DAYS
 
   const firstGroup = groups?.[0]
+  const currentProxy = useMemo(() => {
+    const proxy = firstGroup?.all.find((item) => item.name === firstGroup.now)
+    return proxy && !('all' in proxy) ? proxy : undefined
+  }, [firstGroup])
+
   const [serverMenuOpen, setServerMenuOpen] = useState(false)
+  const [connectionButtonHovered, setConnectionButtonHovered] = useState(false)
   const [switchingProxy, setSwitchingProxy] = useState<string | null>(null)
   const [pingTesting, setPingTesting] = useState(false)
 
@@ -178,7 +352,9 @@ const Home: React.FC = () => {
     if (!firstGroup || !firstGroup.now || pingTesting) return
     setPingTesting(true)
     try {
-      await mihomoProxyDelay(firstGroup.now, firstGroup.testUrl)
+      const proxy = firstGroup.all.find((item) => item.name === firstGroup.now)
+      const provider = proxy && 'provider-name' in proxy ? proxy['provider-name'] : undefined
+      await mihomoProxyDelay(firstGroup.now, firstGroup.testUrl, provider)
       mutateGroups()
     } catch {
       // ignore node failure
@@ -252,16 +428,44 @@ const Home: React.FC = () => {
     if (!supportUrl) return null
     try {
       const parsed = new URL(supportUrl)
+      if (!['http:', 'https:', 'tg:'].includes(parsed.protocol)) return null
       const normalized = `${parsed.hostname}${parsed.pathname}`.toLowerCase()
       return {
         href: parsed.toString(),
         isTelegram:
-          parsed.protocol === 'tg:' || normalized.includes('t.me') || normalized.includes('telegram')
+          parsed.protocol === 'tg:' ||
+          normalized.includes('t.me') ||
+          normalized.includes('telegram')
       }
     } catch {
       return null
     }
   }, [supportUrl])
+
+  const renewAction = useMemo(() => {
+    if (currentProfile?.home && currentProfile.homeName?.trim()) {
+      try {
+        const parsed = new URL(currentProfile.home)
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+          return { href: parsed.toString(), label: currentProfile.homeName.trim() }
+        }
+      } catch {
+        // Fall through to the support URL.
+      }
+    }
+    return supportLinkInfo
+      ? { href: supportLinkInfo.href, label: t('pages.home.renewSubscription') }
+      : null
+  }, [currentProfile?.home, currentProfile?.homeName, supportLinkInfo, t])
+
+  const expiryTitle = isExpired
+    ? t('pages.home.subscriptionExpired')
+    : daysRemaining === 0
+      ? t('pages.home.subscriptionExpiringToday')
+      : t('pages.home.subscriptionExpiring', { count: daysRemaining })
+  const expiryHint = isExpired
+    ? t('pages.home.subscriptionExpiredHint')
+    : t('pages.home.subscriptionExpiringHint', { date: expireDate })
 
   const onValueChange = async (enable: boolean): Promise<void> => {
     setLoading(true)
@@ -306,9 +510,40 @@ const Home: React.FC = () => {
   }
 
   return (
-    <BasePage>
+    <BasePage
+      ref={pageRef}
+      contentClassName="sm:pr-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
+    >
+      {showEditModal && editingItem && (
+        <EditInfoModal
+          item={editingItem}
+          isCurrent={editingItem.id === profileConfig?.current}
+          updateProfileItem={async (item: ProfileItem) => {
+            await addProfileItem(item)
+            setShowEditModal(false)
+            setEditingItem(null)
+          }}
+          onClose={() => {
+            setShowEditModal(false)
+            setEditingItem(null)
+          }}
+        />
+      )}
+      {fileOver && (
+        <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 px-12 py-8">
+            <FileDown className="size-10 text-primary" />
+            <span className="text-sm font-medium text-primary">
+              {t('pages.profiles.dropFileHint')}
+            </span>
+          </div>
+        </div>
+      )}
       {!hasProfiles ? (
-        <div className="h-full w-full flex items-center justify-center">
+        <div
+          data-guide={profileConfig !== undefined ? 'home-profile-state-ready' : undefined}
+          className="h-full w-full flex items-center justify-center"
+        >
           <div className="flex flex-col items-center gap-4 max-w-75 rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl p-8">
             <WifiOff className="size-16 text-muted-foreground" />
             <h2 className="text-xl font-bold text-foreground">{t('pages.profiles.emptyTitle')}</h2>
@@ -324,154 +559,230 @@ const Home: React.FC = () => {
               <span className="text-sm font-medium">{t('pages.profiles.addProfile')}</span>
             </button>
           </div>
-          {showEditModal && editingItem && (
-            <EditInfoModal
-              item={editingItem}
-              isCurrent={false}
-              updateProfileItem={async (item: ProfileItem) => {
-                await addProfileItem(item)
-                setShowEditModal(false)
-                setEditingItem(null)
-              }}
-              onClose={() => {
-                setShowEditModal(false)
-                setEditingItem(null)
-              }}
-            />
-          )}
         </div>
       ) : (
-        <div className="flex flex-col h-full px-2 pb-2 gap-3">
+        <div
+          data-guide="home-profile-state-ready"
+          className="flex flex-col h-full px-2 pb-2 gap-2 sm:gap-3"
+        >
           {/* Profile card */}
           {currentProfile && (
-            <div className="rounded-2xl border border-stroke bg-card/40 backdrop-blur-xl p-4">
-              <div
-                data-guide="home-profile-header"
-                className="flex items-center justify-center gap-3"
-              >
-                {currentProfile.logo && (
-                  <img
-                    src={currentProfile.logo}
-                    alt=""
-                    className="w-10 h-10 rounded-full"
-                    onError={(e) => {
-                      ;(e.target as HTMLImageElement).style.display = 'none'
-                    }}
-                  />
-                )}
-                <span className="font-medium text-base">{currentProfile.name}</span>
+            <div className="w-full max-w-lg self-center rounded-2xl border border-stroke bg-card/45 p-2 backdrop-blur-xl sm:p-3">
+              <div data-guide="home-profile-header" className="relative min-w-0">
+                <div className="flex min-w-0 flex-col items-center gap-1 px-10 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+                    <span>{t('pages.home.profile')}</span>
+                  </div>
+                  <div className="relative min-w-0">
+                    <Popover open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="group flex min-w-0 max-w-full items-center justify-center gap-2 rounded-lg px-2 py-1 outline-hidden transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+                          aria-label={t('pages.home.profile')}
+                        >
+                          <span
+                            title={currentProfile.name}
+                            className="min-w-0 truncate text-base font-medium leading-tight text-foreground"
+                          >
+                            {currentProfile.name}
+                          </span>
+                          <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        side="bottom"
+                        align="center"
+                        sideOffset={6}
+                        className="w-[min(22rem,calc(100vw-2rem))] p-1.5"
+                      >
+                        <div className="mb-1 flex items-center justify-between px-1">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {t('pages.home.profile')}
+                          </span>
+                          <div className="flex items-center gap-0.5">
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              title={t('pages.profiles.updateAll')}
+                              aria-label={t('pages.profiles.updateAll')}
+                              onClick={() => void handleUpdateAll()}
+                              disabled={updating}
+                            >
+                              <RefreshCcw className={updating ? 'animate-spin' : ''} />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              title={t('pages.profiles.addProfile')}
+                              aria-label={t('pages.profiles.addProfile')}
+                              onClick={handleAddProfile}
+                            >
+                              <Plus />
+                            </Button>
+                          </div>
+                        </div>
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(event) => void onProfileDragEnd(event)}
+                        >
+                          <SortableContext items={sortedItems.map((item) => item.id)}>
+                            <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
+                              {sortedItems.map((item) => (
+                                <ProfileItem
+                                  key={item.id}
+                                  info={item}
+                                  variant="compact"
+                                  isCurrent={item.id === profileConfig?.current}
+                                  addProfileItem={addProfileItem}
+                                  removeProfileItem={removeProfileItem}
+                                  updateProfileItem={updateProfileItem}
+                                  switching={switching}
+                                  onClick={() => handleProfileSelect(item.id)}
+                                />
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
                 {currentProfile.type === 'remote' && (
-                  <button
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
                     onClick={handleUpdateProfile}
                     disabled={updating}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50 cursor-pointer"
+                    aria-label={t('profile.updateSubscription')}
+                    title={t('profile.updateSubscription')}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    <RefreshCcw className={`size-4 ${updating ? 'animate-spin' : ''}`} />
-                  </button>
+                    <RefreshCcw className={updating ? 'animate-spin' : ''} />
+                  </Button>
                 )}
               </div>
+
               {currentProfile.announce && (
                 <div
                   data-guide="home-profile-announce"
-                  className="text-sm font-medium text-center mt-2 whitespace-pre-line"
+                  className="mt-2 min-w-0 whitespace-pre-line break-words text-center text-xs font-medium text-foreground"
                 >
                   {currentProfile.announce}
                 </div>
               )}
-            </div>
-          )}
-          {/* Subscription info */}
-          {subscription && (
-            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl p-1">
-              <div className="flex flex-col items-center py-2 px-1">
-                <span className="text-sm text-foreground">{t('pages.home.trafficRemaining')}</span>
-                <span className="font-bold text-base mt-0.5">
-                  {trafficTotal > 0 ? formatBytes(trafficRemaining) : <InfinityIcon />}
-                </span>
-              </div>
-              <div className="h-8 w-px bg-stroke" />
-              <div className="flex flex-col items-center py-2 px-1">
-                <span className="text-sm text-foreground">{t('pages.home.daysRemaining')}</span>
-                <span className="text-base font-bold mt-0.5">
-                  {expireTimestamp > 0 ? daysRemaining : <InfinityIcon />}
-                </span>
-              </div>
-              <div className="h-8 w-px bg-stroke" />
-              <div className="flex flex-col items-center py-2 px-1">
-                <span className="text-sm text-foreground">{t('pages.home.expires')}</span>
-                <span className="text-base font-bold mt-0.5">{expireDate}</span>
-              </div>
+
+              {subscription && (
+                <>
+                  <Separator className="my-1 sm:my-2" />
+                  {showExpiryNotice ? (
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="flex min-w-0 items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
+                    >
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/15 text-destructive">
+                        <CalendarClock aria-hidden="true" className="size-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-semibold leading-snug text-destructive">
+                          {expiryTitle}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground text-balance">
+                          {expiryHint}
+                        </p>
+                        {renewAction && (
+                          <button
+                            type="button"
+                            onClick={() => open(renewAction.href)}
+                            className="mt-3 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-stroke-power-on bg-gradient-start-power-on/50 px-4 text-sm font-semibold text-foreground transition-colors hover:bg-gradient-start-power-on/40 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <CreditCard aria-hidden="true" className="size-4" />
+                            <span className="truncate">{renewAction.label}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid min-w-0 grid-cols-1 divide-y divide-stroke sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                      <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
+                        <span className="text-xs text-muted-foreground">
+                          {t('pages.home.trafficRemaining')}
+                        </span>
+                        <span className="text-sm font-bold tabular-nums">
+                          {trafficTotal > 0 ? (
+                            formatBytes(Math.max(0, trafficRemaining))
+                          ) : (
+                            <InfinityIcon className="size-4" />
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
+                        <span className="text-xs text-muted-foreground">
+                          {t('pages.home.daysRemaining')}
+                        </span>
+                        <span className="text-sm font-bold tabular-nums">
+                          {hasExpiry ? daysRemaining : <InfinityIcon className="size-4" />}
+                        </span>
+                      </div>
+                      <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 py-0.5 text-center sm:px-2">
+                        <span className="text-xs text-muted-foreground">
+                          {t('pages.home.expires')}
+                        </span>
+                        <span className="text-sm font-bold tabular-nums">{expireDate}</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 
           {/* Connection button */}
-          <div className="flex flex-col grow-3 items-center justify-center min-h-0">
-            <div className="mb-3 flex h-6 items-center justify-center">
-              <CharacterMorph
-                texts={[status]}
-                reserveTexts={statusWidthTexts}
-                interval={3000}
-                className="h-6 leading-none text-foreground font-semibold uppercase"
-              />
-            </div>
+          <div className="flex flex-col grow-3 items-center justify-center min-h-0 translate-y-1">
             <button
+              type="button"
               disabled={isDisabled}
-              onClick={() => onValueChange(!isSelected)}
+              onClick={() => void onValueChange(!isSelected)}
               data-guide="home-power-toggle"
-              className="relative group transition-transform active:scale-95 cursor-pointer"
+              aria-label={status}
+              aria-pressed={isSelected}
+              aria-busy={loading}
+              title={status}
+              onMouseEnter={() => setConnectionButtonHovered(true)}
+              onMouseLeave={() => setConnectionButtonHovered(false)}
+              className={`group relative size-[clamp(260px,42vh,340px)] shrink-0 cursor-pointer rounded-full bg-transparent outline-none disabled:cursor-default disabled:opacity-60 disabled:hover:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background ${
+                isSelected
+                  ? 'drop-shadow-[0_0_20px_rgba(50,255,50,0.24)]'
+                  : 'opacity-80 grayscale-[0.18]'
+              }`}
             >
-              <div
-                className={`w-35 h-35 rounded-full flex items-center justify-center transition-all duration-300 bg-radi
-al-[at_30%_45%] backdrop-blur-xl border-2 group-hover:brightness-110 ${
-                  isSelected
-                    ? 'from-gradient-start-power-on/60 to-gradient-end-power-on/60 border-stroke-power-on shadow-[0_0_15px_8px] shadow-stroke-power-on/50 group-hover:shadow-[0_0_25px_10px] group-hover:shadow-stroke-power-on/60'
-                    : 'from-gradient-start-power-off/60 to-gradient-end-power-off/60 border-zinc-400/60 group-hover:shadow-[0_0_15px_8px] group-hover:shadow-zinc-300/40'
-                } ${loading ? 'animate-none' : ''}`}
+              <HomeConnectionGlobe
+                location={currentProxy?.location}
+                connected={isSelected}
+                hovered={connectionButtonHovered && !isDisabled}
+                title={currentProfile?.announce ?? currentProfile?.name}
+              />
+              <span
+                className={`pointer-events-none absolute left-1/2 top-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-background/70 shadow-lg backdrop-blur-md transition-all duration-200 ${
+                  loading ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
+                }`}
               >
-                <div className="relative size-16">
-                  <Spinner
-                    className={`absolute inset-0 m-auto size-16 text-[#FAFAFA] transition-all duration-300 ease-out ${
-                      loading ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-                    }`}
-                  />
-                  <img
-                    src={Pause}
-                    alt=""
-                    className={`absolute inset-0 size-16 fill-foreground transition-all duration-300 ease-out ${
-                      !loading && isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-                    }`}
-                  />
-                  <img
-                    src={Power}
-                    alt=""
-                    className={`absolute inset-0 size-16 fill-foreground transition-all duration-300 ease-out ${
-                      !loading && !isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-                    }`}
-                  />
-                </div>
-                </div>
+                <Spinner className="size-9 text-foreground" />
+              </span>
             </button>
             <div className="mt-3 h-8 flex items-center justify-center">
               <div
                 aria-hidden={!showConnectedTimer}
-                className={`inline-flex items-center gap-0.5 text-base font-bold text-foreground tabular-nums transition-all duration-300 ease-out ${
+                className={`timer inline-flex items-center gap-0.5 text-base font-bold text-foreground tabular-nums transition-all duration-300 ease-out ${
                   showConnectedTimer ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
                 }`}
               >
-                <NumberFlow
-                  value={elapsedHours}
-                  format={{ minimumIntegerDigits: 2, useGrouping: false }}
-                />
-                <span>:</span>
-                <NumberFlow
-                  value={elapsedMinutes}
-                  format={{ minimumIntegerDigits: 2, useGrouping: false }}
-                />
-                <span>:</span>
-                <NumberFlow
-                  value={elapsedSeconds}
-                  format={{ minimumIntegerDigits: 2, useGrouping: false }}
-                />
+                <ConnectedTimer active={isSelected} />
               </div>
             </div>
             <div
@@ -481,156 +792,159 @@ al-[at_30%_45%] backdrop-blur-xl border-2 group-hover:brightness-110 ${
               }`}
             >
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <ArrowUp className="size-3.5 text-stroke-power-on" />
+                <ArrowUp className="size-3.5 text-stroke-power-on text-green-400" />
                 <span>{calcTraffic(trafficInfo.upTotal)}</span>
               </div>
               <div className="h-3 w-px bg-stroke" />
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <ArrowDown className="size-3.5 text-stroke-power-on" />
+                <ArrowDown className="size-3.5 text-stroke-power-on text-blue-400" />
                 <span>{calcTraffic(trafficInfo.downTotal)}</span>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 -translate-y-4">
-          {/* Server selector */}
-          {firstGroup && (
-            <div className="max-w-xs mx-auto w-full">
-            <Popover open={serverMenuOpen} onOpenChange={setServerMenuOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  data-guide="home-group-selector"
-                  className="group w-full min-w-0 cursor-pointer outline-hidden max-h-16"
-                >
-                  <div className="flex items-center gap-3 rounded-2xl border border-stroke bg-card/50 backdrop-blur-xl p-3 transition-colors hover:bg-card/70">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-stroke bg-gradient-start-power-on/10 text-stroke-power-on">
-                      <Globe className="size-5" />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col text-left">
-                      <span className="text-xs text-muted-foreground leading-tight">
-                        {t('pages.home.server')}
-                      </span>
-                      <span className="flag-emoji truncate text-sm font-medium leading-tight mt-0.5">
-                        {firstGroup.now || firstGroup.name}
-                      </span>
-                    </div>
-                    <span className="shrink-0 flex w-14 items-center justify-center">
-                      {pingTesting ? (
-                        <Spinner className="size-4" />
-                      ) : currentServerDelay > 0 ? (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          title={t('pages.home.pingTest')}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handlePingAll()
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handlePingAll()
-                            }
-                          }}
-                          className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
-                        >
-                          <span
-                            className={`text-xs font-medium tabular-nums ${delayColorClass(currentServerDelay)}`}
-                          >
-                            {currentServerDelay} ms
+          <div className="flex flex-col gap-2 -translate-y-9">
+            {/* Server selector */}
+            {firstGroup && (
+              <div className="mx-auto w-full max-w-[304px]">
+                <Popover open={serverMenuOpen} onOpenChange={setServerMenuOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      data-guide="home-group-selector"
+                      className="group w-full min-w-0 cursor-pointer outline-hidden"
+                    >
+                      <div className="flex h-15 items-center gap-2 rounded-xl border border-stroke bg-card/45 px-3 backdrop-blur-xl transition-all hover:border-stroke-power-on/40 hover:bg-card/75">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-stroke bg-gradient-start-power-on/10 text-stroke-power-on">
+                          <Globe className="size-4.5" />
+                        </div>
+                        <div className="flex min-w-0 flex-1 flex-col text-left">
+                          <span className="text-xs leading-tight text-muted-foreground">
+                            {t('pages.home.server')}
                           </span>
-                        </span>
-                      ) : (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          title={t('pages.home.pingTest')}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handlePingAll()
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handlePingAll()
-                            }
-                          }}
-                          className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
-                        >
-                          <Gauge className="size-4" />
-                        </span>
-                      )}
-                    </span>
-                    <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-                  </div>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                side="top"
-                align="center"
-                sideOffset={6}
-                className="w-(--radix-popover-trigger-width) max-w-xs p-1.5"
-              >
-                <div className="flag-emoji flex flex-col gap-0.5 max-h-64 overflow-y-auto">
-                  {firstGroup.all.map((proxy) => {
-                    const delay = proxyDelay(proxy)
-                    const selected = proxy.name === firstGroup.now
-                    return (
-                      <button
-                        key={proxy.name}
-                        disabled={switchingProxy !== null}
-                        onClick={() => handleChangeProxy(firstGroup.name, proxy.name)}
-                        className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left transition-colors cursor-pointer disabled:cursor-default ${
-                          selected ? 'bg-primary/10' : 'hover:bg-accent/60'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Check
-                            className={`size-4 shrink-0 text-primary ${selected ? 'opacity-100' : 'opacity-0'}`}
-                          />
-                          <span className="text-sm truncate" title={proxy.name}>
-                            {proxy.name}
+                          <span
+                            className="flag-emoji mt-0.5 truncate text-sm font-medium leading-tight"
+                            title={firstGroup.now || firstGroup.name}
+                          >
+                            {firstGroup.now || firstGroup.name}
                           </span>
                         </div>
-                        <span className="shrink-0 inline-flex items-center justify-center w-10">
-                          {switchingProxy === proxy.name ? (
-                            <Spinner className="size-3.5" />
+                        <span className="flex shrink-0 items-center justify-center">
+                          {pingTesting ? (
+                            <Spinner className="size-4" />
+                          ) : currentServerDelay > 0 ? (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              title={t('pages.home.pingTest')}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handlePingAll()
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  handlePingAll()
+                                }
+                              }}
+                              className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+                            >
+                              <span
+                                className={`text-xs font-medium tabular-nums ${delayColorClass(currentServerDelay)}`}
+                              >
+                                {currentServerDelay} ms
+                              </span>
+                            </span>
                           ) : (
                             <span
-                              className={`text-xs font-medium tabular-nums ${delayColorClass(delay)}`}
+                              role="button"
+                              tabIndex={0}
+                              title={t('pages.home.pingTest')}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handlePingAll()
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  handlePingAll()
+                                }
+                              }}
+                              className="flex items-center justify-center rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
                             >
-                              {delay <= 0 ? '—' : delay}
+                              <Gauge className="size-4" />
                             </span>
                           )}
                         </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-            </div>
-          )}
+                        <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                      </div>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="top"
+                    align="center"
+                    sideOffset={6}
+                    className="w-(--radix-popover-trigger-width) max-w-[304px] p-1.5"
+                  >
+                    <div className="flag-emoji flex flex-col gap-0.5 max-h-64 overflow-y-auto">
+                      {firstGroup.all.map((proxy) => {
+                        const delay = proxyDelay(proxy)
+                        const selected = proxy.name === firstGroup.now
+                        return (
+                          <button
+                            key={proxy.name}
+                            disabled={switchingProxy !== null}
+                            onClick={() => handleChangeProxy(firstGroup.name, proxy.name)}
+                            className={`flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-colors disabled:cursor-default ${
+                              selected ? 'bg-primary/10' : 'hover:bg-accent/60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Check
+                                className={`size-4 shrink-0 text-primary ${selected ? 'opacity-100' : 'opacity-0'}`}
+                              />
+                              <span className="text-sm truncate" title={proxy.name}>
+                                {proxy.name}
+                              </span>
+                            </div>
+                            <span className="shrink-0 inline-flex items-center justify-center w-10">
+                              {switchingProxy === proxy.name ? (
+                                <Spinner className="size-3.5" />
+                              ) : (
+                                <span
+                                  className={`text-xs font-medium tabular-nums ${delayColorClass(delay)}`}
+                                >
+                                  {delay <= 0 ? '—' : delay}
+                                </span>
+                              )}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
 
-          {supportLinkInfo && (
-            <div className="flex justify-center text-sm text-muted-foreground">
-              <button
-                data-guide="home-support-link"
-                type="button"
-                onClick={() => open(supportLinkInfo.href)}
-                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer"
-              >
-                {supportLinkInfo.isTelegram ? (
-                  <SiTelegram className="size-4" />
-                ) : (
-                  <Globe className="size-4" />
-                )}
-                <span>{t('pages.profiles.support')}</span>
-              </button>
-            </div>
-          )}
+            {supportLinkInfo && (
+              <div className="flex justify-center text-sm text-muted-foreground">
+                <button
+                  data-guide="home-support-link"
+                  type="button"
+                  onClick={() => open(supportLinkInfo.href)}
+                  className="inline-flex translate-y-1 items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer"
+                >
+                  {supportLinkInfo.isTelegram ? (
+                    <SiTelegram className="size-4" />
+                  ) : (
+                    <Globe className="size-4" />
+                  )}
+                  <span>{t('pages.profiles.support')}</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -27,6 +27,7 @@ import { checkAutoRun, disableAutoRun, enableAutoRun } from '../sys/autoRun'
 import {
   getAppConfig,
   patchAppConfig,
+  setProcessVpnEnabled,
   getControledMihomoConfig,
   patchControledMihomoConfig,
   getProfileConfig,
@@ -165,8 +166,8 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('mihomoUpgradeUI', ipcErrorWrapper(mihomoUpgradeUI))
   ipcMain.handle('mihomoUpgrade', ipcErrorWrapper(mihomoUpgrade))
   ipcMain.handle('mihomoHotReloadConfig', ipcErrorWrapper(mihomoHotReloadConfig))
-  ipcMain.handle('mihomoProxyDelay', (_e, proxy, url) =>
-    ipcErrorWrapper(mihomoProxyDelay)(proxy, url)
+  ipcMain.handle('mihomoProxyDelay', (_e, proxy, url, provider) =>
+    ipcErrorWrapper(mihomoProxyDelay)(proxy, url, provider)
   )
   ipcMain.handle('mihomoGroupDelay', (_e, group, url) =>
     ipcErrorWrapper(mihomoGroupDelay)(group, url)
@@ -177,6 +178,9 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('disableAutoRun', ipcErrorWrapper(disableAutoRun))
   ipcMain.handle('getAppConfig', (_e, force) => ipcErrorWrapper(getAppConfig)(force))
   ipcMain.handle('patchAppConfig', (_e, config) => ipcErrorWrapper(patchAppConfig)(config))
+  ipcMain.handle('setProcessVpnEnabled', (_e, processName, enabled) =>
+    ipcErrorWrapper(setProcessVpnEnabled)(processName, enabled)
+  )
   ipcMain.handle('getControledMihomoConfig', (_e, force) =>
     ipcErrorWrapper(getControledMihomoConfig)(force)
   )

@@ -5,15 +5,20 @@ import { Card, CardContent } from '@renderer/components/ui/card'
 import { Spinner } from '@renderer/components/ui/spinner'
 import BasePage from '@renderer/components/base/base-page'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
+import ProxyGlobe, {
+  buildProxyGlobeCountries,
+  ProxyGlobeCountry,
+  ProxyGlobeFocusRequest
+} from '@renderer/components/proxies/proxy-globe'
 import {
   getImageDataURL,
   mihomoChangeProxy,
   mihomoCloseAllConnections,
   mihomoProxyDelay
 } from '@renderer/utils/ipc'
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { forwardRef, useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
-import { GroupedVirtuoso, GroupedVirtuosoHandle } from 'react-virtuoso'
+import { ListProps, Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 import ProxyItem from '@renderer/components/proxies/proxy-item'
 import ProxySettingModal from '@renderer/components/proxies/proxy-setting-modal'
 import { useGroups } from '@renderer/hooks/use-groups'
@@ -21,46 +26,64 @@ import CollapseInput from '@renderer/components/base/collapse-input'
 import { includesIgnoreCase } from '@renderer/utils/includes'
 import { cn } from '@renderer/lib/utils'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
+import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import { useTranslation } from 'react-i18next'
 import {
-  ChevronDown,
-  ChevronsDownUp,
   ChevronsRight,
-  ChevronsUpDown,
   Gauge,
-  MousePointerClick,
   LocateFixed,
-  Route,
-  Scale,
-  Shield,
+  RefreshCcw,
   SlidersHorizontal,
   Zap
 } from 'lucide-react'
+import {
+  getProviderName,
+  groupTypeColor,
+  groupTypeIcon
+} from '@renderer/components/proxies/group-meta'
 
-const groupTypeBadge = 'border-foreground/20 bg-foreground/8 text-foreground/80'
-const groupTypeColor: Record<string, string> = {
-  Selector: groupTypeBadge,
-  URLTest: groupTypeBadge,
-  Fallback: groupTypeBadge,
-  LoadBalance: groupTypeBadge,
-  Relay: groupTypeBadge
+type ProxyListItem =
+  | { kind: 'group'; groupIndex: number }
+  | { kind: 'row'; groupIndex: number; rowIndex: number }
+
+interface ProxyListContext {
+  countries: ProxyGlobeCountry[]
+  locale: string
+  focusRequest: ProxyGlobeFocusRequest | null
 }
 
-const groupTypeIcon: Record<string, React.ReactNode> = {
-  Selector: <MousePointerClick className="size-4" />,
-  URLTest: <Zap className="size-4" />,
-  Fallback: <Shield className="size-4" />,
-  LoadBalance: <Scale className="size-4" />,
-  Relay: <Route className="size-4" />
+const ProxyListHeader: React.FC<{ context: ProxyListContext }> = ({ context }) => (
+  <div className="h-[clamp(20rem,56vh,32rem)] min-h-0">
+    <ProxyGlobe
+      countries={context.countries}
+      locale={context.locale}
+      focusRequest={context.focusRequest}
+    />
+  </div>
+)
+
+const ProxySelectorList = forwardRef<
+  HTMLDivElement,
+  ListProps & { context: ProxyListContext }
+>(({ context: _context, ...props }, ref) => (
+  <div {...props} ref={ref} className="mx-auto w-[94%]" />
+))
+
+ProxySelectorList.displayName = 'ProxySelectorList'
+
+const proxyListComponents = {
+  Header: ProxyListHeader,
+  List: ProxySelectorList
 }
 
 const Proxies: React.FC = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const location = useLocation()
   const fromHome = (location.state as { fromHome?: boolean })?.fromHome ?? false
   const { controledMihomoConfig } = useControledMihomoConfig()
   const { mode = 'rule' } = controledMihomoConfig || {}
   const { groups = [], mutate } = useGroups()
+  const { profileConfig, addProfileItem } = useProfileConfig()
   const { appConfig } = useAppConfig()
   const {
     proxyDisplayLayout = 'double',
@@ -68,49 +91,43 @@ const Proxies: React.FC = () => {
     proxyDisplayOrder = 'default',
     autoCloseConnection = true,
     proxyCols = 'auto',
-    delayTestConcurrency = 50,
-    expandProxyGroups = false
+    delayTestConcurrency = 50
   } = appConfig || {}
   const [cols, setCols] = useState(1)
-  const [isOpen, setIsOpen] = useState<boolean[]>([])
   const [delaying, setDelaying] = useState<boolean[]>([])
   const [searchValue, setSearchValue] = useState<string[]>([])
   const [iconLoadTick, setIconLoadTick] = useState(0)
   const delayingProxiesRef = useRef<Set<string>>(new Set())
   const completedProxiesRef = useRef<Set<string>>(new Set())
   const [delayingTick, setDelayingTick] = useState(0)
-  const prevGroupsLengthRef = useRef(0)
   const [isSettingModalOpen, setIsSettingModalOpen] = useState(false)
-  const virtuosoRef = useRef<GroupedVirtuosoHandle>(null)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const hasScrolledRef = useRef(false)
-  const groupsRef = useRef(groups)
-  const allProxiesRef = useRef<(ControllerProxiesDetail | ControllerGroupDetail)[][]>([])
-  const groupCountsRef = useRef<number[]>([])
-  const recentlyOpenedRef = useRef<Set<number>>(new Set())
+  const [updatingSubscription, setUpdatingSubscription] = useState(false)
+  const virtuosoRef = useRef<VirtuosoHandle>(null)
+  const globeFocusIdRef = useRef(0)
+  const [globeFocusRequest, setGlobeFocusRequest] =
+    useState<ProxyGlobeFocusRequest | null>(null)
+  const { countries } = useMemo(
+    () => buildProxyGlobeCountries(groups || []),
+    [groups]
+  )
   useEffect(() => {
-    if (groups.length !== prevGroupsLengthRef.current) {
-      prevGroupsLengthRef.current = groups.length
-      setIsOpen((prev) => {
-        if (prev.length === groups.length) return prev
-        const next = Array(groups.length).fill(expandProxyGroups)
-        prev.forEach((v, i) => { if (i < next.length) next[i] = v })
-        return next
+    setDelaying((prev) => {
+      if (prev.length === groups.length) return prev
+      const next = Array(groups.length).fill(false)
+      prev.forEach((value, index) => {
+        if (index < next.length) next[index] = value
       })
-      setDelaying((prev) => {
-        if (prev.length === groups.length) return prev
-        const next = Array(groups.length).fill(false)
-        prev.forEach((v, i) => { if (i < next.length) next[i] = v })
-        return next
+      return next
+    })
+    setSearchValue((prev) => {
+      if (prev.length === groups.length) return prev
+      const next = Array(groups.length).fill('')
+      prev.forEach((value, index) => {
+        if (index < next.length) next[index] = value
       })
-      setSearchValue((prev) => {
-        if (prev.length === groups.length) return prev
-        const next = Array(groups.length).fill('')
-        prev.forEach((v, i) => { if (i < next.length) next[i] = v })
-        return next
-      })
-    }
-  }, [groups.length, expandProxyGroups])
+      return next
+    })
+  }, [groups.length])
 
   useEffect(() => {
     groups.forEach((group) => {
@@ -133,55 +150,93 @@ const Proxies: React.FC = () => {
     const groupCounts: number[] = []
     const allProxies: (ControllerProxiesDetail | ControllerGroupDetail)[][] = []
     groups.forEach((group, index) => {
-      if (isOpen[index]) {
-        let groupProxies = group.all.filter(
-          (proxy) => proxy && includesIgnoreCase(proxy.name, searchValue[index])
-        )
-        const count = Math.floor(groupProxies.length / cols)
-        groupCounts.push(groupProxies.length % cols === 0 ? count : count + 1)
-        if (proxyDisplayOrder === 'delay') {
-          groupProxies = groupProxies.sort((a, b) => {
-            if (a.history.length === 0) return -1
-            if (b.history.length === 0) return 1
-            if (a.history[a.history.length - 1].delay === 0) return 1
-            if (b.history[b.history.length - 1].delay === 0) return -1
-            return a.history[a.history.length - 1].delay - b.history[b.history.length - 1].delay
-          })
-        }
-        if (proxyDisplayOrder === 'name') {
-          groupProxies = groupProxies.sort((a, b) => a.name.localeCompare(b.name))
-        }
-        allProxies.push(groupProxies)
-      } else {
-        groupCounts.push(0)
-        allProxies.push([])
+      let groupProxies = group.all.filter(
+        (proxy) => proxy && includesIgnoreCase(proxy.name, searchValue[index])
+      )
+      const count = Math.floor(groupProxies.length / cols)
+      groupCounts.push(groupProxies.length % cols === 0 ? count : count + 1)
+      if (proxyDisplayOrder === 'delay') {
+        groupProxies = groupProxies.sort((a, b) => {
+          if (a.history.length === 0) return -1
+          if (b.history.length === 0) return 1
+          if (a.history[a.history.length - 1].delay === 0) return 1
+          if (b.history[b.history.length - 1].delay === 0) return -1
+          return a.history[a.history.length - 1].delay - b.history[b.history.length - 1].delay
+        })
       }
+      if (proxyDisplayOrder === 'name') {
+        groupProxies = groupProxies.sort((a, b) => a.name.localeCompare(b.name))
+      }
+      allProxies.push(groupProxies)
     })
     return { groupCounts, allProxies }
-  }, [groups, isOpen, proxyDisplayOrder, cols, searchValue])
+  }, [groups, proxyDisplayOrder, cols, searchValue])
 
-  groupsRef.current = groups
-  allProxiesRef.current = allProxies
-  groupCountsRef.current = groupCounts
+  const proxyListItems = useMemo<ProxyListItem[]>(() => {
+    return groups.flatMap((_, groupIndex) => [
+      { kind: 'group' as const, groupIndex },
+      ...Array.from({ length: groupCounts[groupIndex] }, (_, rowIndex) => ({
+        kind: 'row' as const,
+        groupIndex,
+        rowIndex
+      }))
+    ])
+  }, [groups, groupCounts])
 
-  const allExpanded = useMemo(() => {
-    return groups.length > 0 && isOpen.every(Boolean)
-  }, [groups, isOpen])
+  const getProxyRowListIndex = useCallback(
+    (groupIndex: number, rowIndex: number): number => {
+      let listIndex = 0
+      for (let index = 0; index < groupIndex; index++) {
+        listIndex += groupCounts[index] + 1
+      }
+      return listIndex + rowIndex + 1
+    },
+    [groupCounts]
+  )
+
+  const currentProfile = useMemo(() => {
+    if (!profileConfig?.current || !profileConfig?.items) return null
+    return profileConfig.items.find((item) => item.id === profileConfig.current) ?? null
+  }, [profileConfig])
+
+  const updateSubscription = useCallback(async (): Promise<void> => {
+    if (!currentProfile || currentProfile.type !== 'remote' || updatingSubscription) return
+
+    setUpdatingSubscription(true)
+    try {
+      await addProfileItem(currentProfile)
+    } finally {
+      setUpdatingSubscription(false)
+    }
+  }, [currentProfile, updatingSubscription, addProfileItem])
 
   const onChangeProxy = useCallback(
     async (group: string, proxy: string): Promise<void> => {
+      const countryCode = countries.find((country) =>
+        country.nodes.some(
+          (node) => node.groupName === group && node.proxy.name === proxy
+        )
+      )?.countryCode
+
       await mihomoChangeProxy(group, proxy)
+      if (countryCode) {
+        globeFocusIdRef.current += 1
+        setGlobeFocusRequest({ countryCode, id: globeFocusIdRef.current })
+      }
       if (autoCloseConnection) {
         await mihomoCloseAllConnections(group)
       }
       mutate()
     },
-    [autoCloseConnection, mutate]
+    [autoCloseConnection, countries, mutate]
   )
 
   const onProxyDelay = useCallback(
-    async (proxy: string, url?: string): Promise<ControllerProxiesDelay> => {
-      return await mihomoProxyDelay(proxy, url)
+    async (
+      proxy: ControllerProxiesDetail | ControllerGroupDetail,
+      url?: string
+    ): Promise<ControllerProxiesDelay> => {
+      return await mihomoProxyDelay(proxy.name, url, getProviderName(proxy))
     },
     []
   )
@@ -202,13 +257,6 @@ const Proxies: React.FC = () => {
 
   const onGroupDelay = useCallback(
     async (index: number): Promise<void> => {
-      if (allProxies[index].length === 0) {
-        setIsOpen((prev) => {
-          const newOpen = [...prev]
-          newOpen[index] = true
-          return newOpen
-        })
-      }
       setDelaying((prev) => {
         const newDelaying = [...prev]
         newDelaying[index] = true
@@ -221,7 +269,11 @@ const Proxies: React.FC = () => {
       for (const proxy of allProxies[index]) {
         const promise = Promise.resolve().then(async () => {
           try {
-            await mihomoProxyDelay(proxy.name, groups[index].testUrl)
+            await mihomoProxyDelay(
+              proxy.name,
+              groups[index].testUrl,
+              getProviderName(proxy)
+            )
           } catch {
             // ignore
           } finally {
@@ -249,6 +301,15 @@ const Proxies: React.FC = () => {
     [allProxies, groups, delayTestConcurrency, mutate, throttledMutate]
   )
 
+  const proxyListContext = useMemo<ProxyListContext>(
+    () => ({
+      countries: countries as ProxyGlobeCountry[],
+      locale: i18n.language,
+      focusRequest: globeFocusRequest
+    }),
+    [countries, i18n.language, globeFocusRequest]
+  )
+
   const calcCols = useCallback((): number => {
     if (window.matchMedia('(min-width: 1536px)').matches) {
       return 5
@@ -261,31 +322,6 @@ const Proxies: React.FC = () => {
     }
   }, [])
 
-  const toggleOpen = useCallback((index: number) => {
-    setIsOpen((prev) => {
-      const newOpen = [...prev]
-      newOpen[index] = !prev[index]
-      if (!prev[index]) {
-        recentlyOpenedRef.current.add(index)
-        setTimeout(() => recentlyOpenedRef.current.delete(index), 1000)
-      }
-      return newOpen
-    })
-  }, [])
-
-  const toggleAll = useCallback(() => {
-    setIsOpen((prev) => {
-      const shouldExpand = !prev.every(Boolean)
-      if (shouldExpand) {
-        prev.forEach((v, i) => {
-          if (!v) recentlyOpenedRef.current.add(i)
-        })
-        setTimeout(() => recentlyOpenedRef.current.clear(), 1000)
-      }
-      return Array(prev.length).fill(shouldExpand)
-    })
-  }, [])
-
   const updateSearchValue = useCallback((index: number, value: string) => {
     setSearchValue((prev) => {
       const newSearchValue = [...prev]
@@ -295,27 +331,19 @@ const Proxies: React.FC = () => {
   }, [])
 
   const scrollToCurrentProxy = useCallback(
-    (index: number) => {
-      if (!isOpen[index]) {
-        setIsOpen((prev) => {
-          const newOpen = [...prev]
-          newOpen[index] = true
-          return newOpen
-        })
-      }
-      let i = 0
-      for (let j = 0; j < index; j++) {
-        i += groupCounts[j]
-      }
-      i += Math.floor(
-        allProxies[index].findIndex((proxy) => proxy.name === groups[index].now) / cols
-      )
+    (groupIndex: number) => {
+      const group = groups[groupIndex]
+      if (!group) return
+
+      const proxyIndex = allProxies[groupIndex]?.findIndex((proxy) => proxy.name === group.now) ?? -1
+      if (proxyIndex < 0) return
+
       virtuosoRef.current?.scrollToIndex({
-        index: Math.floor(i),
+        index: getProxyRowListIndex(groupIndex, Math.floor(proxyIndex / cols)),
         align: 'start'
       })
     },
-    [isOpen, groupCounts, allProxies, groups, cols]
+    [groups, allProxies, getProxyRowListIndex, cols]
   )
 
   useEffect(() => {
@@ -344,22 +372,10 @@ const Proxies: React.FC = () => {
       const showMeta = groupDisplayLayout !== 'hidden'
 
       return (
-        <div
-          className="w-full px-2 pb-2"
-        >
+        <div className="w-full px-2 pb-2">
           <Card
             data-guide={index === 0 ? 'proxies-first-group' : undefined}
-            data-guide-open={index === 0 ? `${isOpen[index]}` : undefined}
-            className={cn('w-full relative isolate bg-card/50 backdrop-blur-3xl cursor-pointer py-0 transition-all duration-200 hover:bg-card/65', isExpanded ? 'z-10 shadow-md' : 'hover:shadow-sm')}
-            role="button"
-            tabIndex={0}
-            onClick={() => toggleOpen(index)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault()
-                toggleOpen(index)
-              }
-            }}
+            className={cn('w-full relative isolate bg-card/50 backdrop-blur-3xl py-0 transition-all duration-200', isExpanded && 'z-10 shadow-md')}
           >
             <CardContent className="w-full px-4 py-3">
               <div className="flex justify-between items-center">
@@ -429,10 +445,22 @@ const Proxies: React.FC = () => {
                         <Gauge className="text-base" />
                       )}
                     </Button>
+                    {currentProfile?.type === 'remote' && (
+                      <Button
+                        title={t('profile.updateSubscription')}
+                        aria-label={t('profile.updateSubscription')}
+                        variant="ghost"
+                        size="icon-sm"
+                        disabled={updatingSubscription}
+                        aria-busy={updatingSubscription}
+                        onClick={() => void updateSubscription()}
+                      >
+                        <RefreshCcw
+                          className={cn('text-base', updatingSubscription && 'animate-spin')}
+                        />
+                      </Button>
+                    )}
                   </div>
-                  <ChevronDown
-                    className={`transition-transform duration-200 ml-1 size-5 ${isOpen[index] ? 'rotate-180' : ''}`}
-                  />
                 </div>
               </div>
             </CardContent>
@@ -443,35 +471,34 @@ const Proxies: React.FC = () => {
     [
       groups,
       groupCounts,
-      isOpen,
       groupDisplayLayout,
       searchValue,
       delaying,
       iconLoadTick,
-      toggleOpen,
       updateSearchValue,
       scrollToCurrentProxy,
       onGroupDelay,
+      currentProfile,
+      updatingSubscription,
+      updateSubscription,
       t
     ]
   )
 
   const itemContent = useCallback(
-    (index: number, groupIndex: number) => {
-      const currentGroupCounts = groupCountsRef.current
-      const currentAllProxies = allProxiesRef.current
-      const currentGroups = groupsRef.current
-      let innerIndex = index
-      currentGroupCounts.slice(0, groupIndex).forEach((count) => {
-        innerIndex -= count
-      })
-      const isLastRow = innerIndex === currentGroupCounts[groupIndex] - 1
-      const shouldAnimate = recentlyOpenedRef.current.has(groupIndex)
-      return currentAllProxies[groupIndex] ? (
+    (_index: number, item: ProxyListItem) => {
+      if (item.kind === 'group') return groupContent(item.groupIndex)
+
+      const { groupIndex, rowIndex } = item
+      const group = groups[groupIndex]
+      const groupProxies = allProxies[groupIndex]
+      if (!group || !groupProxies) return <div>Never See This</div>
+
+      const isLastRow = rowIndex === groupCounts[groupIndex] - 1
+      return (
         <div className="flow-root">
           <div
-            className={cn('mx-2 bg-card/30 backdrop-blur-xl border-x border-border/50', innerIndex === 0 && '-mt-5 pt-3', isLastRow && 'rounded-b-xl border-b shadow-sm mb-2', shouldAnimate && 'animate-proxy-row-enter')}
-            style={shouldAnimate ? { animationDelay: `${Math.min(innerIndex * 0.04, 0.3)}s` } : undefined}
+            className={cn('mx-2 bg-card/50 backdrop-blur-xl border-x border-border/50', rowIndex === 0 && '-mt-5 pt-3', isLastRow && 'rounded-b-xl border-b shadow-sm mb-2')}
           >
             <div
               data-guide={groupIndex === 0 ? 'proxies-first-group-row' : undefined}
@@ -480,10 +507,13 @@ const Proxies: React.FC = () => {
                   ? { gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))` }
                   : {}
               }
-              className={cn('grid gap-2 px-3 pt-2', proxyCols === 'auto' && 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5', isLastRow && 'pb-3')}
+              className={cn(
+                'grid grid-cols-1 gap-2 px-3 pt-2',
+                isLastRow && 'pb-3'
+              )}
             >
-              {Array.from({ length: cols }).map((_, i) => {
-                const proxy = currentAllProxies[groupIndex][innerIndex * cols + i]
+              {Array.from({ length: cols }).map((_, columnIndex) => {
+                const proxy = groupProxies[rowIndex * cols + columnIndex]
                 if (!proxy) return null
                 return (
                   <ProxyItem
@@ -492,9 +522,9 @@ const Proxies: React.FC = () => {
                     onProxyDelay={onProxyDelay}
                     onSelect={onChangeProxy}
                     proxy={proxy}
-                    group={currentGroups[groupIndex]}
+                    group={group}
                     proxyDisplayLayout={proxyDisplayLayout}
-                    selected={proxy.name === currentGroups[groupIndex]?.now}
+                    selected={proxy.name === group.now}
                     isGroupDelaying={delayingProxiesRef.current.has(proxy.name)}
                   />
                 )
@@ -502,11 +532,13 @@ const Proxies: React.FC = () => {
             </div>
           </div>
         </div>
-      ) : (
-        <div>Never See This</div>
       )
     },
     [
+      groupContent,
+      groups,
+      allProxies,
+      groupCounts,
       proxyCols,
       cols,
       mutate,
@@ -521,21 +553,9 @@ const Proxies: React.FC = () => {
     <BasePage
       title={t('pages.proxies.title')}
       showBackButton={fromHome}
+      contentClassName="overflow-hidden"
       header={
         <>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            className="app-nodrag"
-            title={allExpanded ? t('pages.proxies.collapseAll') : t('pages.proxies.expandAll')}
-            onClick={toggleAll}
-          >
-            {allExpanded ? (
-              <ChevronsDownUp className="text-lg" />
-            ) : (
-              <ChevronsUpDown className="text-lg" />
-            )}
-          </Button>
           <Button
             size="icon-sm"
             variant="ghost"
@@ -559,18 +579,20 @@ const Proxies: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div ref={scrollContainerRef} className="h-[calc(100vh-58px)]">
-          <GroupedVirtuoso
+        <div className="h-full min-h-0">
+          <Virtuoso<ProxyListItem, ProxyListContext>
             ref={virtuosoRef}
-            groupCounts={groupCounts}
-            groupContent={groupContent}
+            data={proxyListItems}
+            context={proxyListContext}
+            components={proxyListComponents}
+            defaultItemHeight={72}
+            increaseViewportBy={{ top: 0, bottom: 96 }}
+            computeItemKey={(_index, item) =>
+              item.kind === 'group'
+                ? `group-${item.groupIndex}`
+                : `row-${item.groupIndex}-${item.rowIndex}`
+            }
             itemContent={itemContent}
-            isScrolling={(scrolling) => {
-              if (scrolling && !hasScrolledRef.current) {
-                hasScrolledRef.current = true
-                scrollContainerRef.current?.setAttribute('data-scrolled', '')
-              }
-            }}
           />
         </div>
       )}

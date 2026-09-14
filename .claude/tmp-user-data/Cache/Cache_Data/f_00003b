@@ -1,0 +1,438 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/proxies/proxy-setting-modal.tsx");import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "/src/components/ui/dialog.tsx";
+import { Button } from "/src/components/ui/button.tsx";
+import { Switch } from "/src/components/ui/switch.tsx";
+import { Input } from "/src/components/ui/input.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "/src/components/ui/select.tsx";
+import { Tabs, TabsList, TabsTrigger } from "/src/components/ui/tabs.tsx";
+import __vite__cjsImport6_react from "/@fs/D:/dev/vrp-vpn-app/node_modules/.vite/deps/react.js?v=086361af"; const React = !__vite__cjsImport6_react.__esModule ? __vite__cjsImport6_react : __vite__cjsImport6_react.default; const useState = __vite__cjsImport6_react["useState"]; const useEffect = __vite__cjsImport6_react["useEffect"];
+import SettingItem from "/src/components/base/base-setting-item.tsx";
+import { useAppConfig } from "/src/hooks/use-app-config.tsx";
+import debounce from "/src/utils/debounce.ts";
+import { t } from "/@fs/D:/dev/vrp-vpn-app/node_modules/.vite/deps/i18next.js?v=086361af";
+var _jsxFileName = "D:/dev/vrp-vpn-app/src/renderer/src/components/proxies/proxy-setting-modal.tsx";
+import __vite__cjsImport11_react_jsxDevRuntime from "/@fs/D:/dev/vrp-vpn-app/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=086361af"; const _jsxDEV = __vite__cjsImport11_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+const ProxySettingModal = (props) => {
+	_s();
+	const { onClose } = props;
+	const { appConfig, patchAppConfig } = useAppConfig();
+	const { proxyCols = "auto", proxyDisplayOrder = "default", groupDisplayLayout = "single", proxyDisplayLayout = "double", autoCloseConnection = true, expandProxyGroups = false, delayTestUrl, delayTestConcurrency, delayTestTimeout } = appConfig || {};
+	const [url, setUrl] = useState(delayTestUrl ?? "");
+	const setUrlDebounce = debounce((v) => {
+		patchAppConfig({ delayTestUrl: v });
+	}, 500);
+	useEffect(() => {
+		setUrl(delayTestUrl ?? "");
+	}, [delayTestUrl]);
+	return /* @__PURE__ */ _jsxDEV(Dialog, {
+		open: true,
+		onOpenChange: (open) => {
+			if (!open) onClose();
+		},
+		children: /* @__PURE__ */ _jsxDEV(DialogContent, {
+			className: "flag-emoji sm:max-w-xl max-h-[calc(100vh-120px)] flex flex-col min-h-0",
+			showCloseButton: false,
+			children: [
+				/* @__PURE__ */ _jsxDEV(DialogHeader, {
+					className: "pb-0",
+					children: /* @__PURE__ */ _jsxDEV(DialogTitle, { children: t("pages.proxies.proxyGroupSettings") }, void 0, false, {
+						fileName: _jsxFileName,
+						lineNumber: 68,
+						columnNumber: 11
+					}, this)
+				}, void 0, false, {
+					fileName: _jsxFileName,
+					lineNumber: 67,
+					columnNumber: 9
+				}, this),
+				/* @__PURE__ */ _jsxDEV("div", {
+					className: "py-2 flex flex-col gap-1 overflow-y-auto min-h-0",
+					children: [
+						/* @__PURE__ */ _jsxDEV(SettingItem, {
+							title: t("proxies.proxyNodeColumns"),
+							divider: true,
+							children: /* @__PURE__ */ _jsxDEV(Select, {
+								value: proxyCols,
+								onValueChange: async (value) => {
+									await patchAppConfig({ proxyCols: value });
+								},
+								children: [/* @__PURE__ */ _jsxDEV(SelectTrigger, {
+									size: "sm",
+									className: "w-[150px]",
+									children: /* @__PURE__ */ _jsxDEV(SelectValue, {}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 79,
+										columnNumber: 17
+									}, this)
+								}, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 78,
+									columnNumber: 15
+								}, this), /* @__PURE__ */ _jsxDEV(SelectContent, { children: [
+									/* @__PURE__ */ _jsxDEV(SelectItem, {
+										value: "auto",
+										children: t("proxies.proxyColsAuto")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 82,
+										columnNumber: 17
+									}, this),
+									/* @__PURE__ */ _jsxDEV(SelectItem, {
+										value: "1",
+										children: t("proxies.proxyCols1")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 83,
+										columnNumber: 17
+									}, this),
+									/* @__PURE__ */ _jsxDEV(SelectItem, {
+										value: "2",
+										children: t("proxies.proxyCols2")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 84,
+										columnNumber: 17
+									}, this),
+									/* @__PURE__ */ _jsxDEV(SelectItem, {
+										value: "3",
+										children: t("proxies.proxyCols3")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 85,
+										columnNumber: 17
+									}, this),
+									/* @__PURE__ */ _jsxDEV(SelectItem, {
+										value: "4",
+										children: t("proxies.proxyCols4")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 86,
+										columnNumber: 17
+									}, this)
+								] }, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 81,
+									columnNumber: 15
+								}, this)]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 72,
+								columnNumber: 13
+							}, this)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 71,
+							columnNumber: 11
+						}, this),
+						/* @__PURE__ */ _jsxDEV(SettingItem, {
+							title: t("proxies.nodeSortMethod"),
+							divider: true,
+							children: /* @__PURE__ */ _jsxDEV(Tabs, {
+								value: proxyDisplayOrder,
+								onValueChange: async (value) => {
+									await patchAppConfig({ proxyDisplayOrder: value });
+								},
+								children: /* @__PURE__ */ _jsxDEV(TabsList, { children: [
+									/* @__PURE__ */ _jsxDEV(TabsTrigger, {
+										value: "default",
+										children: t("proxies.sortDefault")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 100,
+										columnNumber: 17
+									}, this),
+									/* @__PURE__ */ _jsxDEV(TabsTrigger, {
+										value: "delay",
+										children: t("proxies.sortDelay")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 101,
+										columnNumber: 17
+									}, this),
+									/* @__PURE__ */ _jsxDEV(TabsTrigger, {
+										value: "name",
+										children: t("proxies.sortName")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 102,
+										columnNumber: 17
+									}, this)
+								] }, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 99,
+									columnNumber: 15
+								}, this)
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 91,
+								columnNumber: 13
+							}, this)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 90,
+							columnNumber: 11
+						}, this),
+						/* @__PURE__ */ _jsxDEV(SettingItem, {
+							title: t("proxies.proxyGroupDetails"),
+							divider: true,
+							children: /* @__PURE__ */ _jsxDEV(Tabs, {
+								value: groupDisplayLayout,
+								onValueChange: async (value) => {
+									await patchAppConfig({ groupDisplayLayout: value });
+								},
+								children: /* @__PURE__ */ _jsxDEV(TabsList, { children: [
+									/* @__PURE__ */ _jsxDEV(TabsTrigger, {
+										value: "hidden",
+										children: t("proxies.displayHidden")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 116,
+										columnNumber: 17
+									}, this),
+									/* @__PURE__ */ _jsxDEV(TabsTrigger, {
+										value: "single",
+										children: t("proxies.displaySingle")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 117,
+										columnNumber: 17
+									}, this),
+									/* @__PURE__ */ _jsxDEV(TabsTrigger, {
+										value: "double",
+										children: t("proxies.displayDouble")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 118,
+										columnNumber: 17
+									}, this)
+								] }, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 115,
+									columnNumber: 15
+								}, this)
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 107,
+								columnNumber: 13
+							}, this)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 106,
+							columnNumber: 11
+						}, this),
+						/* @__PURE__ */ _jsxDEV(SettingItem, {
+							title: t("proxies.proxyNodeDetails"),
+							divider: true,
+							children: /* @__PURE__ */ _jsxDEV(Tabs, {
+								value: proxyDisplayLayout,
+								onValueChange: async (value) => {
+									await patchAppConfig({ proxyDisplayLayout: value });
+								},
+								children: /* @__PURE__ */ _jsxDEV(TabsList, { children: [
+									/* @__PURE__ */ _jsxDEV(TabsTrigger, {
+										value: "hidden",
+										children: t("proxies.displayHidden")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 132,
+										columnNumber: 17
+									}, this),
+									/* @__PURE__ */ _jsxDEV(TabsTrigger, {
+										value: "single",
+										children: t("proxies.displaySingle")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 133,
+										columnNumber: 17
+									}, this),
+									/* @__PURE__ */ _jsxDEV(TabsTrigger, {
+										value: "double",
+										children: t("proxies.displayDouble")
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 134,
+										columnNumber: 17
+									}, this)
+								] }, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 131,
+									columnNumber: 15
+								}, this)
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 123,
+								columnNumber: 13
+							}, this)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 122,
+							columnNumber: 11
+						}, this),
+						/* @__PURE__ */ _jsxDEV(SettingItem, {
+							title: t("proxies.disconnectOnSwitch"),
+							divider: true,
+							children: /* @__PURE__ */ _jsxDEV(Switch, {
+								checked: autoCloseConnection,
+								onCheckedChange: (value) => {
+									patchAppConfig({ autoCloseConnection: value });
+								}
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 139,
+								columnNumber: 13
+							}, this)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 138,
+							columnNumber: 11
+						}, this),
+						/* @__PURE__ */ _jsxDEV(SettingItem, {
+							title: t("proxies.expandProxyGroups"),
+							divider: true,
+							children: /* @__PURE__ */ _jsxDEV(Switch, {
+								checked: expandProxyGroups,
+								onCheckedChange: (value) => {
+									patchAppConfig({ expandProxyGroups: value });
+								}
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 147,
+								columnNumber: 13
+							}, this)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 146,
+							columnNumber: 11
+						}, this),
+						/* @__PURE__ */ _jsxDEV(SettingItem, {
+							title: t("proxies.delayTestUrl"),
+							divider: true,
+							children: /* @__PURE__ */ _jsxDEV(Input, {
+								className: "w-[60%] h-8",
+								value: url,
+								placeholder: t("proxies.delayTestUrlPlaceholder"),
+								onChange: (event) => {
+									const value = event.target.value;
+									setUrl(value);
+									setUrlDebounce(value);
+								}
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 155,
+								columnNumber: 13
+							}, this)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 154,
+							columnNumber: 11
+						}, this),
+						/* @__PURE__ */ _jsxDEV(SettingItem, {
+							title: t("proxies.delayTestConcurrency"),
+							divider: true,
+							children: /* @__PURE__ */ _jsxDEV(Input, {
+								type: "number",
+								className: "w-[100px] h-8",
+								value: delayTestConcurrency?.toString() ?? "",
+								placeholder: t("proxies.delayTestConcurrencyPlaceholder"),
+								onChange: (event) => {
+									patchAppConfig({ delayTestConcurrency: parseInt(event.target.value) });
+								}
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 167,
+								columnNumber: 13
+							}, this)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 166,
+							columnNumber: 11
+						}, this),
+						/* @__PURE__ */ _jsxDEV(SettingItem, {
+							title: t("proxies.delayTestTimeout"),
+							children: /* @__PURE__ */ _jsxDEV(Input, {
+								type: "number",
+								className: "w-[100px] h-8",
+								value: delayTestTimeout?.toString() ?? "",
+								placeholder: t("proxies.delayTestTimeoutPlaceholder"),
+								onChange: (event) => {
+									patchAppConfig({ delayTestTimeout: parseInt(event.target.value) });
+								}
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 178,
+								columnNumber: 13
+							}, this)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 177,
+							columnNumber: 11
+						}, this)
+					]
+				}, void 0, true, {
+					fileName: _jsxFileName,
+					lineNumber: 70,
+					columnNumber: 9
+				}, this),
+				/* @__PURE__ */ _jsxDEV(DialogFooter, { children: /* @__PURE__ */ _jsxDEV(DialogClose, {
+					asChild: true,
+					children: /* @__PURE__ */ _jsxDEV(Button, {
+						size: "sm",
+						variant: "ghost",
+						children: t("common.close")
+					}, void 0, false, {
+						fileName: _jsxFileName,
+						lineNumber: 191,
+						columnNumber: 13
+					}, this)
+				}, void 0, false, {
+					fileName: _jsxFileName,
+					lineNumber: 190,
+					columnNumber: 11
+				}, this) }, void 0, false, {
+					fileName: _jsxFileName,
+					lineNumber: 189,
+					columnNumber: 9
+				}, this)
+			]
+		}, void 0, true, {
+			fileName: _jsxFileName,
+			lineNumber: 63,
+			columnNumber: 7
+		}, this)
+	}, void 0, false, {
+		fileName: _jsxFileName,
+		lineNumber: 57,
+		columnNumber: 5
+	}, this);
+};
+_s(ProxySettingModal, "1ZCW+lvFj29uW+wvnB9fl07geJY=", false, function() {
+	return [useAppConfig];
+});
+_c = ProxySettingModal;
+export default ProxySettingModal;
+var _c;
+$RefreshReg$(_c, "ProxySettingModal");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope;
+import * as __vite_react_currentExports from "/src/components/proxies/proxy-setting-modal.tsx";
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+
+  const currentExports = __vite_react_currentExports;
+  queueMicrotask(() => {
+    RefreshRuntime.registerExportsForReactRefresh("D:/dev/vrp-vpn-app/src/renderer/src/components/proxies/proxy-setting-modal.tsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("D:/dev/vrp-vpn-app/src/renderer/src/components/proxies/proxy-setting-modal.tsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) { return RefreshRuntime.register(type, "D:/dev/vrp-vpn-app/src/renderer/src/components/proxies/proxy-setting-modal.tsx" + ' ' + id); }
+function $RefreshSig$() { return RefreshRuntime.createSignatureFunctionForTransform(); }
+
+//# sourceMappingURL=data:application/json;base64,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QUFZLE9BQU8sRUFBRSwrQkFBK0I7T0FBRTtpQkFDckQsd0JBQUM7UUFDQyxNQUFLO1FBQ0wsV0FBVTtRQUNWLE9BQU8sc0JBQXNCLFVBQVUsSUFBSTtRQUMzQyxhQUFhLEVBQUUsMENBQTBDO1FBQ3pELFdBQVcsVUFBVTtBQUNuQix3QkFBZSxFQUFFLHNCQUFzQixTQUFTLE1BQU0sT0FBTyxNQUFNLEVBQUUsQ0FBQzs7Ozs7O2VBRXhFOzs7OztjQUNVO01BQ2Qsd0JBQUM7T0FBWSxPQUFPLEVBQUUsMkJBQTJCO2lCQUMvQyx3QkFBQztRQUNDLE1BQUs7UUFDTCxXQUFVO1FBQ1YsT0FBTyxrQkFBa0IsVUFBVSxJQUFJO1FBQ3ZDLGFBQWEsRUFBRSxzQ0FBc0M7UUFDckQsV0FBVyxVQUFVO0FBQ25CLHdCQUFlLEVBQUUsa0JBQWtCLFNBQVMsTUFBTSxPQUFPLE1BQU0sRUFBRSxDQUFDOzs7Ozs7ZUFFcEU7Ozs7O2NBQ1U7Ozs7OztZQUNWO0lBQ04sd0JBQUMsMEJBQ0Msd0JBQUM7S0FBWTtlQUNYLHdCQUFDO01BQU8sTUFBSztNQUFLLFNBQVE7Z0JBQ3ZCLEVBQUUsZUFBZTs7Ozs7YUFDWDs7Ozs7WUFDRzs7OztZQUNEOzs7Ozs7VUFDRDs7Ozs7U0FDVDs7Ozs7O0FBSWIsZUFBZSIsIm5hbWVzIjpbIlByb3h5U2V0dGluZ01vZGFsOiBSZWFjdC5GQzxQcm9wcz4iXSwic291cmNlcyI6WyJwcm94eS1zZXR0aW5nLW1vZGFsLnRzeCJdLCJ2ZXJzaW9uIjozLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge1xyXG4gIERpYWxvZyxcclxuICBEaWFsb2dDbG9zZSxcclxuICBEaWFsb2dDb250ZW50LFxyXG4gIERpYWxvZ0Zvb3RlcixcclxuICBEaWFsb2dIZWFkZXIsXHJcbiAgRGlhbG9nVGl0bGVcclxufSBmcm9tICdAcmVuZGVyZXIvY29tcG9uZW50cy91aS9kaWFsb2cnXHJcbmltcG9ydCB7IEJ1dHRvbiB9IGZyb20gJ0ByZW5kZXJlci9jb21wb25lbnRzL3VpL2J1dHRvbidcclxuaW1wb3J0IHsgU3dpdGNoIH0gZnJvbSAnQHJlbmRlcmVyL2NvbXBvbmVudHMvdWkvc3dpdGNoJ1xyXG5pbXBvcnQgeyBJbnB1dCB9IGZyb20gJ0ByZW5kZXJlci9jb21wb25lbnRzL3VpL2lucHV0J1xyXG5pbXBvcnQge1xyXG4gIFNlbGVjdCxcclxuICBTZWxlY3RDb250ZW50LFxyXG4gIFNlbGVjdEl0ZW0sXHJcbiAgU2VsZWN0VHJpZ2dlcixcclxuICBTZWxlY3RWYWx1ZVxyXG59IGZyb20gJ0ByZW5kZXJlci9jb21wb25lbnRzL3VpL3NlbGVjdCdcclxuaW1wb3J0IHsgVGFicywgVGFic0xpc3QsIFRhYnNUcmlnZ2VyIH0gZnJvbSAnQHJlbmRlcmVyL2NvbXBvbmVudHMvdWkvdGFicydcclxuaW1wb3J0IFJlYWN0LCB7IHVzZVN0YXRlLCB1c2VFZmZlY3QgfSBmcm9tICdyZWFjdCdcclxuaW1wb3J0IFNldHRpbmdJdGVtIGZyb20gJy4uL2Jhc2UvYmFzZS1zZXR0aW5nLWl0ZW0nXHJcbmltcG9ydCB7IHVzZUFwcENvbmZpZyB9IGZyb20gJ0ByZW5kZXJlci9ob29rcy91c2UtYXBwLWNvbmZpZydcclxuaW1wb3J0IGRlYm91bmNlIGZyb20gJ0ByZW5kZXJlci91dGlscy9kZWJvdW5jZSdcclxuaW1wb3J0IHsgdCB9IGZyb20gJ2kxOG5leHQnXHJcblxyXG5pbnRlcmZhY2UgUHJvcHMge1xyXG4gIG9uQ2xvc2U6ICgpID0+IHZvaWRcclxufVxyXG5cclxuY29uc3QgUHJveHlTZXR0aW5nTW9kYWw6IFJlYWN0LkZDPFByb3BzPiA9IChwcm9wcykgPT4ge1xyXG4gIGNvbnN0IHsgb25DbG9zZSB9ID0gcHJvcHNcclxuICBjb25zdCB7IGFwcENvbmZpZywgcGF0Y2hBcHBDb25maWcgfSA9IHVzZUFwcENvbmZpZygpXHJcblxyXG4gIGNvbnN0IHtcclxuICAgIHByb3h5Q29scyA9ICdhdXRvJyxcclxuICAgIHByb3h5RGlzcGxheU9yZGVyID0gJ2RlZmF1bHQnLFxyXG4gICAgZ3JvdXBEaXNwbGF5TGF5b3V0ID0gJ3NpbmdsZScsXHJcbiAgICBwcm94eURpc3BsYXlMYXlvdXQgPSAnZG91YmxlJyxcclxuICAgIGF1dG9DbG9zZUNvbm5lY3Rpb24gPSB0cnVlLFxyXG4gICAgZXhwYW5kUHJveHlHcm91cHMgPSBmYWxzZSxcclxuICAgIGRlbGF5VGVzdFVybCxcclxuICAgIGRlbGF5VGVzdENvbmN1cnJlbmN5LFxyXG4gICAgZGVsYXlUZXN0VGltZW91dFxyXG4gIH0gPSBhcHBDb25maWcgfHwge31cclxuXHJcbiAgY29uc3QgW3VybCwgc2V0VXJsXSA9IHVzZVN0YXRlKGRlbGF5VGVzdFVybCA/PyAnJylcclxuXHJcbiAgY29uc3Qgc2V0VXJsRGVib3VuY2UgPSBkZWJvdW5jZSgodjogc3RyaW5nKSA9PiB7XHJcbiAgICBwYXRjaEFwcENvbmZpZyh7IGRlbGF5VGVzdFVybDogdiB9KVxyXG4gIH0sIDUwMClcclxuXHJcbiAgdXNlRWZmZWN0KCgpID0+IHtcclxuICAgIHNldFVybChkZWxheVRlc3RVcmwgPz8gJycpXHJcbiAgfSwgW2RlbGF5VGVzdFVybF0pXHJcblxyXG4gIHJldHVybiAoXHJcbiAgICA8RGlhbG9nXHJcbiAgICAgIG9wZW49e3RydWV9XHJcbiAgICAgIG9uT3BlbkNoYW5nZT17KG9wZW4pID0+IHtcclxuICAgICAgICBpZiAoIW9wZW4pIG9uQ2xvc2UoKVxyXG4gICAgICB9fVxyXG4gICAgPlxyXG4gICAgICA8RGlhbG9nQ29udGVudFxyXG4gICAgICAgIGNsYXNzTmFtZT1cImZsYWctZW1vamkgc206bWF4LXcteGwgbWF4LWgtW2NhbGMoMTAwdmgtMTIwcHgpXSBmbGV4IGZsZXgtY29sIG1pbi1oLTBcIlxyXG4gICAgICAgIHNob3dDbG9zZUJ1dHRvbj17ZmFsc2V9XHJcbiAgICAgID5cclxuICAgICAgICA8RGlhbG9nSGVhZGVyIGNsYXNzTmFtZT1cInBiLTBcIj5cclxuICAgICAgICAgIDxEaWFsb2dUaXRsZT57dCgncGFnZXMucHJveGllcy5wcm94eUdyb3VwU2V0dGluZ3MnKX08L0RpYWxvZ1RpdGxlPlxyXG4gICAgICAgIDwvRGlhbG9nSGVhZGVyPlxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicHktMiBmbGV4IGZsZXgtY29sIGdhcC0xIG92ZXJmbG93LXktYXV0byBtaW4taC0wXCI+XHJcbiAgICAgICAgICA8U2V0dGluZ0l0ZW0gdGl0bGU9e3QoJ3Byb3hpZXMucHJveHlOb2RlQ29sdW1ucycpfSBkaXZpZGVyPlxyXG4gICAgICAgICAgICA8U2VsZWN0XHJcbiAgICAgICAgICAgICAgdmFsdWU9e3Byb3h5Q29sc31cclxuICAgICAgICAgICAgICBvblZhbHVlQ2hhbmdlPXthc3luYyAodmFsdWUpID0+IHtcclxuICAgICAgICAgICAgICAgIGF3YWl0IHBhdGNoQXBwQ29uZmlnKHsgcHJveHlDb2xzOiB2YWx1ZSBhcyAnYXV0bycgfCAnMScgfCAnMicgfCAnMycgfCAnNCcgfSlcclxuICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgPFNlbGVjdFRyaWdnZXIgc2l6ZT1cInNtXCIgY2xhc3NOYW1lPVwidy1bMTUwcHhdXCI+XHJcbiAgICAgICAgICAgICAgICA8U2VsZWN0VmFsdWUgLz5cclxuICAgICAgICAgICAgICA8L1NlbGVjdFRyaWdnZXI+XHJcbiAgICAgICAgICAgICAgPFNlbGVjdENvbnRlbnQ+XHJcbiAgICAgICAgICAgICAgICA8U2VsZWN0SXRlbSB2YWx1ZT1cImF1dG9cIj57dCgncHJveGllcy5wcm94eUNvbHNBdXRvJyl9PC9TZWxlY3RJdGVtPlxyXG4gICAgICAgICAgICAgICAgPFNlbGVjdEl0ZW0gdmFsdWU9XCIxXCI+e3QoJ3Byb3hpZXMucHJveHlDb2xzMScpfTwvU2VsZWN0SXRlbT5cclxuICAgICAgICAgICAgICAgIDxTZWxlY3RJdGVtIHZhbHVlPVwiMlwiPnt0KCdwcm94aWVzLnByb3h5Q29sczInKX08L1NlbGVjdEl0ZW0+XHJcbiAgICAgICAgICAgICAgICA8U2VsZWN0SXRlbSB2YWx1ZT1cIjNcIj57dCgncHJveGllcy5wcm94eUNvbHMzJyl9PC9TZWxlY3RJdGVtPlxyXG4gICAgICAgICAgICAgICAgPFNlbGVjdEl0ZW0gdmFsdWU9XCI0XCI+e3QoJ3Byb3hpZXMucHJveHlDb2xzNCcpfTwvU2VsZWN0SXRlbT5cclxuICAgICAgICAgICAgICA8L1NlbGVjdENvbnRlbnQ+XHJcbiAgICAgICAgICAgIDwvU2VsZWN0PlxyXG4gICAgICAgICAgPC9TZXR0aW5nSXRlbT5cclxuICAgICAgICAgIDxTZXR0aW5nSXRlbSB0aXRsZT17dCgncHJveGllcy5ub2RlU29ydE1ldGhvZCcpfSBkaXZpZGVyPlxyXG4gICAgICAgICAgICA8VGFic1xyXG4gICAgICAgICAgICAgIHZhbHVlPXtwcm94eURpc3BsYXlPcmRlcn1cclxuICAgICAgICAgICAgICBvblZhbHVlQ2hhbmdlPXthc3luYyAodmFsdWUpID0+IHtcclxuICAgICAgICAgICAgICAgIGF3YWl0IHBhdGNoQXBwQ29uZmlnKHtcclxuICAgICAgICAgICAgICAgICAgcHJveHlEaXNwbGF5T3JkZXI6IHZhbHVlIGFzICdkZWZhdWx0JyB8ICdkZWxheScgfCAnbmFtZSdcclxuICAgICAgICAgICAgICAgIH0pXHJcbiAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgIDxUYWJzTGlzdD5cclxuICAgICAgICAgICAgICAgIDxUYWJzVHJpZ2dlciB2YWx1ZT1cImRlZmF1bHRcIj57dCgncHJveGllcy5zb3J0RGVmYXVsdCcpfTwvVGFic1RyaWdnZXI+XHJcbiAgICAgICAgICAgICAgICA8VGFic1RyaWdnZXIgdmFsdWU9XCJkZWxheVwiPnt0KCdwcm94aWVzLnNvcnREZWxheScpfTwvVGFic1RyaWdnZXI+XHJcbiAgICAgICAgICAgICAgICA8VGFic1RyaWdnZXIgdmFsdWU9XCJuYW1lXCI+e3QoJ3Byb3hpZXMuc29ydE5hbWUnKX08L1RhYnNUcmlnZ2VyPlxyXG4gICAgICAgICAgICAgIDwvVGFic0xpc3Q+XHJcbiAgICAgICAgICAgIDwvVGFicz5cclxuICAgICAgICAgIDwvU2V0dGluZ0l0ZW0+XHJcbiAgICAgICAgICA8U2V0dGluZ0l0ZW0gdGl0bGU9e3QoJ3Byb3hpZXMucHJveHlHcm91cERldGFpbHMnKX0gZGl2aWRlcj5cclxuICAgICAgICAgICAgPFRhYnNcclxuICAgICAgICAgICAgICB2YWx1ZT17Z3JvdXBEaXNwbGF5TGF5b3V0fVxyXG4gICAgICAgICAgICAgIG9uVmFsdWVDaGFuZ2U9e2FzeW5jICh2YWx1ZSkgPT4ge1xyXG4gICAgICAgICAgICAgICAgYXdhaXQgcGF0Y2hBcHBDb25maWcoe1xyXG4gICAgICAgICAgICAgICAgICBncm91cERpc3BsYXlMYXlvdXQ6IHZhbHVlIGFzICdoaWRkZW4nIHwgJ3NpbmdsZScgfCAnZG91YmxlJ1xyXG4gICAgICAgICAgICAgICAgfSlcclxuICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgPFRhYnNMaXN0PlxyXG4gICAgICAgICAgICAgICAgPFRhYnNUcmlnZ2VyIHZhbHVlPVwiaGlkZGVuXCI+e3QoJ3Byb3hpZXMuZGlzcGxheUhpZGRlbicpfTwvVGFic1RyaWdnZXI+XHJcbiAgICAgICAgICAgICAgICA8VGFic1RyaWdnZXIgdmFsdWU9XCJzaW5nbGVcIj57dCgncHJveGllcy5kaXNwbGF5U2luZ2xlJyl9PC9UYWJzVHJpZ2dlcj5cclxuICAgICAgICAgICAgICAgIDxUYWJzVHJpZ2dlciB2YWx1ZT1cImRvdWJsZVwiPnt0KCdwcm94aWVzLmRpc3BsYXlEb3VibGUnKX08L1RhYnNUcmlnZ2VyPlxyXG4gICAgICAgICAgICAgIDwvVGFic0xpc3Q+XHJcbiAgICAgICAgICAgIDwvVGFicz5cclxuICAgICAgICAgIDwvU2V0dGluZ0l0ZW0+XHJcbiAgICAgICAgICA8U2V0dGluZ0l0ZW0gdGl0bGU9e3QoJ3Byb3hpZXMucHJveHlOb2RlRGV0YWlscycpfSBkaXZpZGVyPlxyXG4gICAgICAgICAgICA8VGFic1xyXG4gICAgICAgICAgICAgIHZhbHVlPXtwcm94eURpc3BsYXlMYXlvdXR9XHJcbiAgICAgICAgICAgICAgb25WYWx1ZUNoYW5nZT17YXN5bmMgKHZhbHVlKSA9PiB7XHJcbiAgICAgICAgICAgICAgICBhd2FpdCBwYXRjaEFwcENvbmZpZyh7XHJcbiAgICAgICAgICAgICAgICAgIHByb3h5RGlzcGxheUxheW91dDogdmFsdWUgYXMgJ2hpZGRlbicgfCAnc2luZ2xlJyB8ICdkb3VibGUnXHJcbiAgICAgICAgICAgICAgICB9KVxyXG4gICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICA8VGFic0xpc3Q+XHJcbiAgICAgICAgICAgICAgICA8VGFic1RyaWdnZXIgdmFsdWU9XCJoaWRkZW5cIj57dCgncHJveGllcy5kaXNwbGF5SGlkZGVuJyl9PC9UYWJzVHJpZ2dlcj5cclxuICAgICAgICAgICAgICAgIDxUYWJzVHJpZ2dlciB2YWx1ZT1cInNpbmdsZVwiPnt0KCdwcm94aWVzLmRpc3BsYXlTaW5nbGUnKX08L1RhYnNUcmlnZ2VyPlxyXG4gICAgICAgICAgICAgICAgPFRhYnNUcmlnZ2VyIHZhbHVlPVwiZG91YmxlXCI+e3QoJ3Byb3hpZXMuZGlzcGxheURvdWJsZScpfTwvVGFic1RyaWdnZXI+XHJcbiAgICAgICAgICAgICAgPC9UYWJzTGlzdD5cclxuICAgICAgICAgICAgPC9UYWJzPlxyXG4gICAgICAgICAgPC9TZXR0aW5nSXRlbT5cclxuICAgICAgICAgIDxTZXR0aW5nSXRlbSB0aXRsZT17dCgncHJveGllcy5kaXNjb25uZWN0T25Td2l0Y2gnKX0gZGl2aWRlcj5cclxuICAgICAgICAgICAgPFN3aXRjaFxyXG4gICAgICAgICAgICAgIGNoZWNrZWQ9e2F1dG9DbG9zZUNvbm5lY3Rpb259XHJcbiAgICAgICAgICAgICAgb25DaGVja2VkQ2hhbmdlPXsodmFsdWUpID0+IHtcclxuICAgICAgICAgICAgICAgIHBhdGNoQXBwQ29uZmlnKHsgYXV0b0Nsb3NlQ29ubmVjdGlvbjogdmFsdWUgfSlcclxuICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICAvPlxyXG4gICAgICAgICAgPC9TZXR0aW5nSXRlbT5cclxuICAgICAgICAgIDxTZXR0aW5nSXRlbSB0aXRsZT17dCgncHJveGllcy5leHBhbmRQcm94eUdyb3VwcycpfSBkaXZpZGVyPlxyXG4gICAgICAgICAgICA8U3dpdGNoXHJcbiAgICAgICAgICAgICAgY2hlY2tlZD17ZXhwYW5kUHJveHlHcm91cHN9XHJcbiAgICAgICAgICAgICAgb25DaGVja2VkQ2hhbmdlPXsodmFsdWUpID0+IHtcclxuICAgICAgICAgICAgICAgIHBhdGNoQXBwQ29uZmlnKHsgZXhwYW5kUHJveHlHcm91cHM6IHZhbHVlIH0pXHJcbiAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgLz5cclxuICAgICAgICAgIDwvU2V0dGluZ0l0ZW0+XHJcbiAgICAgICAgICA8U2V0dGluZ0l0ZW0gdGl0bGU9e3QoJ3Byb3hpZXMuZGVsYXlUZXN0VXJsJyl9IGRpdmlkZXI+XHJcbiAgICAgICAgICAgIDxJbnB1dFxyXG4gICAgICAgICAgICAgIGNsYXNzTmFtZT1cInctWzYwJV0gaC04XCJcclxuICAgICAgICAgICAgICB2YWx1ZT17dXJsfVxyXG4gICAgICAgICAgICAgIHBsYWNlaG9sZGVyPXt0KCdwcm94aWVzLmRlbGF5VGVzdFVybFBsYWNlaG9sZGVyJyl9XHJcbiAgICAgICAgICAgICAgb25DaGFuZ2U9eyhldmVudCkgPT4ge1xyXG4gICAgICAgICAgICAgICAgY29uc3QgdmFsdWUgPSBldmVudC50YXJnZXQudmFsdWVcclxuICAgICAgICAgICAgICAgIHNldFVybCh2YWx1ZSlcclxuICAgICAgICAgICAgICAgIHNldFVybERlYm91bmNlKHZhbHVlKVxyXG4gICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgIC8+XHJcbiAgICAgICAgICA8L1NldHRpbmdJdGVtPlxyXG4gICAgICAgICAgPFNldHRpbmdJdGVtIHRpdGxlPXt0KCdwcm94aWVzLmRlbGF5VGVzdENvbmN1cnJlbmN5Jyl9IGRpdmlkZXI+XHJcbiAgICAgICAgICAgIDxJbnB1dFxyXG4gICAgICAgICAgICAgIHR5cGU9XCJudW1iZXJcIlxyXG4gICAgICAgICAgICAgIGNsYXNzTmFtZT1cInctWzEwMHB4XSBoLThcIlxyXG4gICAgICAgICAgICAgIHZhbHVlPXtkZWxheVRlc3RDb25jdXJyZW5jeT8udG9TdHJpbmcoKSA/PyAnJ31cclxuICAgICAgICAgICAgICBwbGFjZWhvbGRlcj17dCgncHJveGllcy5kZWxheVRlc3RDb25jdXJyZW5jeVBsYWNlaG9sZGVyJyl9XHJcbiAgICAgICAgICAgICAgb25DaGFuZ2U9eyhldmVudCkgPT4ge1xyXG4gICAgICAgICAgICAgICAgcGF0Y2hBcHBDb25maWcoeyBkZWxheVRlc3RDb25jdXJyZW5jeTogcGFyc2VJbnQoZXZlbnQudGFyZ2V0LnZhbHVlKSB9KVxyXG4gICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgIC8+XHJcbiAgICAgICAgICA8L1NldHRpbmdJdGVtPlxyXG4gICAgICAgICAgPFNldHRpbmdJdGVtIHRpdGxlPXt0KCdwcm94aWVzLmRlbGF5VGVzdFRpbWVvdXQnKX0+XHJcbiAgICAgICAgICAgIDxJbnB1dFxyXG4gICAgICAgICAgICAgIHR5cGU9XCJudW1iZXJcIlxyXG4gICAgICAgICAgICAgIGNsYXNzTmFtZT1cInctWzEwMHB4XSBoLThcIlxyXG4gICAgICAgICAgICAgIHZhbHVlPXtkZWxheVRlc3RUaW1lb3V0Py50b1N0cmluZygpID8/ICcnfVxyXG4gICAgICAgICAgICAgIHBsYWNlaG9sZGVyPXt0KCdwcm94aWVzLmRlbGF5VGVzdFRpbWVvdXRQbGFjZWhvbGRlcicpfVxyXG4gICAgICAgICAgICAgIG9uQ2hhbmdlPXsoZXZlbnQpID0+IHtcclxuICAgICAgICAgICAgICAgIHBhdGNoQXBwQ29uZmlnKHsgZGVsYXlUZXN0VGltZW91dDogcGFyc2VJbnQoZXZlbnQudGFyZ2V0LnZhbHVlKSB9KVxyXG4gICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgIC8+XHJcbiAgICAgICAgICA8L1NldHRpbmdJdGVtPlxyXG4gICAgICAgIDwvZGl2PlxyXG4gICAgICAgIDxEaWFsb2dGb290ZXI+XHJcbiAgICAgICAgICA8RGlhbG9nQ2xvc2UgYXNDaGlsZD5cclxuICAgICAgICAgICAgPEJ1dHRvbiBzaXplPVwic21cIiB2YXJpYW50PVwiZ2hvc3RcIj5cclxuICAgICAgICAgICAgICB7dCgnY29tbW9uLmNsb3NlJyl9XHJcbiAgICAgICAgICAgIDwvQnV0dG9uPlxyXG4gICAgICAgICAgPC9EaWFsb2dDbG9zZT5cclxuICAgICAgICA8L0RpYWxvZ0Zvb3Rlcj5cclxuICAgICAgPC9EaWFsb2dDb250ZW50PlxyXG4gICAgPC9EaWFsb2c+XHJcbiAgKVxyXG59XHJcblxyXG5leHBvcnQgZGVmYXVsdCBQcm94eVNldHRpbmdNb2RhbFxyXG4iXX0=

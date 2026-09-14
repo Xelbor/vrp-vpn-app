@@ -37,7 +37,6 @@ const ProxySettingModal: React.FC<Props> = (props) => {
     groupDisplayLayout = 'single',
     proxyDisplayLayout = 'double',
     autoCloseConnection = true,
-    expandProxyGroups = false,
     delayTestUrl,
     delayTestConcurrency,
     delayTestTimeout
@@ -140,14 +139,6 @@ const ProxySettingModal: React.FC<Props> = (props) => {
               checked={autoCloseConnection}
               onCheckedChange={(value) => {
                 patchAppConfig({ autoCloseConnection: value })
-              }}
-            />
-          </SettingItem>
-          <SettingItem title={t('proxies.expandProxyGroups')} divider>
-            <Switch
-              checked={expandProxyGroups}
-              onCheckedChange={(value) => {
-                patchAppConfig({ expandProxyGroups: value })
               }}
             />
           </SettingItem>

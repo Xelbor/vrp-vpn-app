@@ -168,8 +168,18 @@ export default {
       noProfile: 'No active profile',
       unlimited: 'Unlimited',
       never: 'Never',
+      subscription: 'Subscription',
+      profile: 'Profile',
       server: 'Server',
-      pingTest: 'Ping all servers'
+      pingTest: 'Ping all servers',
+      noServersFound: 'No servers found',
+      subscriptionExpiring_one: 'Your subscription ends in {{count}} day',
+      subscriptionExpiring_other: 'Your subscription ends in {{count}} days',
+      subscriptionExpiringToday: 'Your subscription ends today',
+      subscriptionExpired: 'Your subscription has ended',
+      subscriptionExpiringHint: 'Renew before {{date}} to keep your access',
+      subscriptionExpiredHint: 'Renew your subscription to restore access',
+      renewSubscription: 'Pay'
     },
     settings: {
       title: 'Application Settings',
@@ -204,7 +214,15 @@ export default {
       expandAll: 'Expand all',
       collapseAll: 'Collapse all',
       delayTestAll: 'Delay test all',
-      nodes: 'nodes'
+      nodes: 'nodes',
+      loading: 'Loading locations…',
+      loadFailed: 'Failed to load locations',
+      retry: 'Retry',
+      noLocations: 'No available locations found',
+      unresolvedLocations: 'Could not determine the location for {{count}} nodes',
+      globeLabel: 'Globe of available proxies',
+      closeCountry: 'Close country list',
+      switchFailed: 'Failed to switch proxy'
     },
     connections: {
       title: 'Connections',
@@ -231,7 +249,21 @@ export default {
       vpnEnabled: 'VPN',
       vpnDisabled: 'Direct',
       vpnToggleHint: 'Toggle VPN for this app',
-      vpnApplying: 'Applying…'
+      vpnApplying: 'Applying…',
+      emptyActiveTitle: 'No active connections',
+      emptyActiveDescription:
+        'Nothing is going through the proxy right now. New connections will show up here as soon as an app starts sending traffic.',
+      emptyClosedTitle: 'No closed connections',
+      emptyClosedDescription: 'Connections that finish or get closed will be kept here.',
+      emptyProcessesTitle: 'No connections yet',
+      emptyProcessesDescription: 'Apps that go through the proxy will appear here grouped by process.',
+      emptyFilterTitle: 'Nothing matches the filter',
+      emptyFilterDescription: 'Try a different query or clear the filter to see everything again.',
+      clearFilter: 'Clear filter',
+      showClosed: 'Show closed',
+      sortBy: 'Sort connections by',
+      sortAscending: 'Sort ascending',
+      sortDescending: 'Sort descending'
     },
     logs: {
       title: 'Real-time Logs',
@@ -938,9 +970,10 @@ export default {
     profileAnnounceTitle: 'Announcement',
     profileAnnounceDesc: 'Important messages from the provider are shown here.',
     powerButtonTitle: 'Power Button',
-    powerButtonDesc: 'Click the power button to enable the connection.',
-    groupSelectorTitle: 'Group Selector',
-    groupSelectorDesc: 'Click the selector on Home to open proxy groups.',
+    powerButtonDesc: 'Use this button to connect or disconnect the VPN.',
+    groupSelectorTitle: 'Server Selector',
+    groupSelectorDesc:
+      'This selector opens the available servers in the current proxy group without leaving Home.',
     firstGroupTitle: 'First Proxy Group',
     firstGroupDesc: 'Click the first group to expand the server list.',
     firstGroupExpandedTitle: 'Proxy Group Details',
@@ -966,7 +999,7 @@ export default {
     mainAreaDesc: 'This is the main operation area where you can view and edit detailed settings.',
     profileManagement: 'Profile Management',
     profileManagementDesc:
-      'The profile management card displays the current subscription information. Click to enter the profile management page. Right-click the card to quickly switch profiles.',
+      'The profile card on Home displays the current subscription. Click the profile name to switch profiles and open each profile’s actions.',
     profileImport: 'Import Subscription',
     profileImportDesc: 'Paste your subscription link here and click import.',
     localProfile: 'Create Local Profile',

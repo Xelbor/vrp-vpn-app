@@ -7,10 +7,10 @@ out
 .DS_Store
 *.log*
 .idea
-*.ttf
 .serena
 .zed
 *.tsbuildinfo
 latest.yml
 TODO.txt
 graphify-out
+.claude

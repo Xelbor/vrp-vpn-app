@@ -1,0 +1,33 @@
+core: mihomo
+silentStart: false
+appTheme: system
+useWindowFrame: false
+proxyInTray: true
+useCustomTrayMenu: false
+maxLogDays: 7
+proxyCols: auto
+connectionDirection: asc
+connectionOrderBy: time
+connectionInterval: 500
+proxyDisplayOrder: default
+autoCheckUpdate: true
+autoCloseConnection: true
+controlDns: false
+controlSniff: false
+hosts: []
+sysProxy:
+  enable: true
+  mode: manual
+proxyMode: false
+disableLoopbackDetector: false
+disableEmbedCA: false
+disableSystemCA: false
+disableNftables: false
+safePaths: []
+disableGPU: false
+proxyDisplayLayout: double
+groupDisplayLayout: double
+autoLightweightMode: core
+mainSwitchMode: tun
+useHotReloadProfile: true
+serviceAuthKey: enc:djEw1cB3pXSAH34v+0IIWtQxUR8c4QC15tIeUCIoIhEvzd0xAhEII7wg0dMnO5FQzDl+QhhfbG5crsbG0MVW14xYUgvskaEtSVOiTLkqR0zvmnJ5N0kLKjRscPsNQt4DEsuG8P//KM5iRbfLtykERY0e4ZDQ/wWAGmJGkuKESDYDPZARTOwwouhrk64sys2pu0HJmUFxTIdXfCaeq2pvSUHcK86e/0SvxHuJxIFslQqP6ZdU13y/Z10YDEwQCnwT9LdMTpM6fQY/SGazgrh597eDrw==

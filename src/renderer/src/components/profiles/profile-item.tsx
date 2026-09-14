@@ -50,6 +50,7 @@ interface Props {
   removeProfileItem: (id: string) => Promise<void>
   onClick: () => Promise<void>
   switching: boolean
+  variant?: 'card' | 'compact'
 }
 
 interface MenuItem {
@@ -69,8 +70,10 @@ const ProfileItem: React.FC<Props> = (props) => {
     updateProfileItem,
     onClick,
     isCurrent,
-    switching
+    switching,
+    variant = 'card'
   } = props
+  const compact = variant === 'compact'
   const extra = info?.extra
   const usage = (extra?.upload ?? 0) + (extra?.download ?? 0)
   const total = extra?.total ?? 0
@@ -241,7 +244,7 @@ const ProfileItem: React.FC<Props> = (props) => {
 
   return (
     <div
-      className="relative col-span-1"
+      className={cn('relative', compact ? 'w-full' : 'col-span-1')}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -296,7 +299,8 @@ const ProfileItem: React.FC<Props> = (props) => {
           }
         }}
         className={cn(
-          'group relative rounded-2xl backdrop-blur-3xl border px-4 pt-3 pb-2 cursor-pointer transition-all duration-200',
+          'group relative backdrop-blur-3xl border cursor-pointer transition-all duration-200',
+          compact ? 'rounded-xl px-2 py-1.5' : 'rounded-2xl px-4 pt-3 pb-2',
           isCurrent
             ? 'border-stroke-profile-active bg-profile-active hover:bg-profile-active/90'
             : 'border-stroke-profile-inactive bg-profile-inactive hover:bg-accent/60',
@@ -365,45 +369,48 @@ const ProfileItem: React.FC<Props> = (props) => {
             </div>
           </div>
 
-          {/* Stats: traffic remaining | days remaining */}
-          <div className="grid grid-cols-2 mt-2">
-            <div className="pr-3 border-r border-foreground/10 justify-items-center">
-              <div className="text-[11px] text-muted-foreground">
-                {t('profile.trafficRemaining')}
+          {!compact && (
+            <>
+              {/* Stats: traffic remaining | days remaining */}
+              <div className="grid grid-cols-2 mt-2">
+                <div className="pr-3 border-r border-foreground/10 justify-items-center">
+                  <div className="text-[11px] text-muted-foreground">
+                    {t('profile.trafficRemaining')}
+                  </div>
+                  <div className="text-sm font-bold mt-0.5 leading-tight">
+                    {hasLimit ? trafficRemaining : <InfinityIcon className="size-5" />}
+                  </div>
+                </div>
+                <div className="pl-3 justify-items-center">
+                  <div className="text-[11px] text-muted-foreground">
+                    {t('profile.daysRemaining')}
+                  </div>
+                  <div className="text-sm font-bold mt-0.5 leading-tight">
+                    {extra?.expire ? daysRemaining : <InfinityIcon className="size-5" />}
+                  </div>
+                </div>
               </div>
-              <div className="text-sm font-bold mt-0.5 leading-tight">
-                {hasLimit ? trafficRemaining : <InfinityIcon className="size-5" />}
-              </div>
-            </div>
-            <div className="pl-3 justify-items-center">
-              <div className="text-[11px] text-muted-foreground">
-                {t('profile.daysRemaining')}
-              </div>
-              <div className="text-sm font-bold mt-0.5 leading-tight">
-                {extra?.expire ? daysRemaining : <InfinityIcon className="size-5" />}
-              </div>
-            </div>
-          </div>
 
-
-          {/* Footer */}
-          <div className="border-t border-foreground/10 mt-3 pt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-            {info.type === 'remote' ? (
-              <>
-                <span>
-                  {t('profile.updatedAt')}: {updatedFromNow}
-                </span>
-                {intervalLabel && (
-                  <span className="flex items-center gap-1">
-                    <Clock className="size-3" />
-                    {intervalLabel}
-                  </span>
+              {/* Footer */}
+              <div className="border-t border-foreground/10 mt-3 pt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+                {info.type === 'remote' ? (
+                  <>
+                    <span>
+                      {t('profile.updatedAt')}: {updatedFromNow}
+                    </span>
+                    {intervalLabel && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="size-3" />
+                        {intervalLabel}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span>{t('profile.localProfileLabel')}</span>
                 )}
-              </>
-            ) : (
-              <span>{t('profile.localProfileLabel')}</span>
-            )}
-          </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

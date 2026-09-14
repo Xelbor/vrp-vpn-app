@@ -1,0 +1,32 @@
+core: mihomo
+silentStart: false
+appTheme: system
+useWindowFrame: false
+proxyInTray: true
+useCustomTrayMenu: false
+maxLogDays: 7
+proxyCols: auto
+connectionDirection: asc
+connectionOrderBy: time
+connectionInterval: 500
+proxyDisplayOrder: default
+autoCheckUpdate: true
+autoCloseConnection: true
+controlDns: false
+controlSniff: false
+hosts: []
+sysProxy:
+  enable: true
+  mode: manual
+proxyMode: false
+disableLoopbackDetector: false
+disableEmbedCA: false
+disableSystemCA: false
+disableNftables: false
+safePaths: []
+disableGPU: false
+proxyDisplayLayout: double
+groupDisplayLayout: double
+autoLightweightMode: core
+mainSwitchMode: tun
+useHotReloadProfile: true

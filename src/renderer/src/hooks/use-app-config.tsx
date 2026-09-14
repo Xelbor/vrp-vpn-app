@@ -1,12 +1,17 @@
 import React, { createContext, useContext, ReactNode } from 'react'
 import { toast } from 'sonner'
 import useSWR from 'swr'
-import { getAppConfig, patchAppConfig as patch } from '@renderer/utils/ipc'
+import {
+  getAppConfig,
+  patchAppConfig as patch,
+  setProcessVpnEnabled as setProcessVpnEnabledIpc
+} from '@renderer/utils/ipc'
 
 interface AppConfigContextType {
   appConfig: AppConfig | undefined
   mutateAppConfig: () => void
   patchAppConfig: (value: Partial<AppConfig>) => Promise<void>
+  setProcessVpnEnabled: (processName: string, enabled: boolean) => Promise<void>
 }
 
 const AppConfigContext = createContext<AppConfigContextType | undefined>(undefined)
@@ -24,6 +29,11 @@ export const AppConfigProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }
 
+  const setProcessVpnEnabled = async (processName: string, enabled: boolean): Promise<void> => {
+    await setProcessVpnEnabledIpc(processName, enabled)
+    await mutateAppConfig()
+  }
+
   React.useEffect(() => {
     window.electron.ipcRenderer.on('appConfigUpdated', () => {
       mutateAppConfig()
@@ -34,7 +44,9 @@ export const AppConfigProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, [])
 
   return (
-    <AppConfigContext.Provider value={{ appConfig, mutateAppConfig, patchAppConfig }}>
+    <AppConfigContext.Provider
+      value={{ appConfig, mutateAppConfig, patchAppConfig, setProcessVpnEnabled }}
+    >
       {children}
     </AppConfigContext.Provider>
   )

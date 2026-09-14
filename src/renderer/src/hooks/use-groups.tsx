@@ -5,13 +5,20 @@ import { subscribeCoreStarted } from '@renderer/store/core-lifecycle-store'
 
 interface GroupsContextType {
   groups: ControllerMixedGroup[] | undefined
-  mutate: () => void
+  error: unknown
+  isLoading: boolean
+  mutate: () => Promise<unknown>
 }
 
 const GroupsContext = createContext<GroupsContextType | undefined>(undefined)
 
 export const GroupsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { data: groups, mutate } = useSWR<ControllerMixedGroup[]>('mihomoGroups', mihomoGroups, {
+  const {
+    data: groups,
+    error,
+    isLoading,
+    mutate
+  } = useSWR<ControllerMixedGroup[]>('mihomoGroups', mihomoGroups, {
     errorRetryInterval: 200,
     errorRetryCount: 10,
     keepPreviousData: true,
@@ -32,7 +39,11 @@ export const GroupsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   }, [])
 
-  return <GroupsContext.Provider value={{ groups, mutate }}>{children}</GroupsContext.Provider>
+  return (
+    <GroupsContext.Provider value={{ groups, error, isLoading, mutate }}>
+      {children}
+    </GroupsContext.Provider>
+  )
 }
 
 export const useGroups = (): GroupsContextType => {

@@ -154,6 +154,9 @@ const App: React.FC = () => {
         aria-hidden
         className="grid-bg pointer-events-none absolute inset-0 w-full h-full z-0"
       />
+      <div className="app-title pointer-events-none fixed top-0 left-1/2 z-50 flex h-14.25 -translate-x-1/2 items-center text-2xl text-foreground">
+        VRP-VPN
+      </div>
       {showQuitConfirm && (
         <ConfirmModal
           title={t('modal.confirmQuit')}

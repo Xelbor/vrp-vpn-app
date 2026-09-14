@@ -166,11 +166,18 @@ export function rulePath(id: string): string {
   return path.join(rulesDir(), `${id}.yaml`)
 }
 
+// Always pipe stderr: `where` on a localized Windows prints
+// "ИНФОРМАЦИЯ: Не удалось найти файлы по заданному шаблону." to the console
+// for every miss, and the OEM codepage mangles it in a UTF-8 terminal.
+function exec(command: string): string {
+  return execSync(command, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+}
+
 function hasCommand(command: string): boolean {
   try {
     const isWin = process.platform === 'win32'
     const whichCmd = isWin ? 'where' : 'which'
-    execSync(`${whichCmd} ${command}`, { encoding: 'utf8', stdio: 'pipe' })
+    exec(`${whichCmd} ${command}`)
     return true
   } catch (error) {
     return false
@@ -187,7 +194,7 @@ export function findSystemMihomo(): string[] {
   for (const name of searchNames) {
     try {
       const command = isWin ? 'where' : 'which'
-      const result = execSync(`${command} ${name}`, { encoding: 'utf8' }).trim()
+      const result = exec(`${command} ${name}`).trim()
       if (result) {
         const paths = result.split('\n').filter((p) => p && existsSync(p))
         for (const p of paths) {
